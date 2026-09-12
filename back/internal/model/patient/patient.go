@@ -11,3 +11,13 @@ type Patient struct {
 	CPF        string    `json:"cpf"`
 	Senha      string    `json:"senha"`
 }
+
+type PatientFilter struct {
+	ID         string `json:"id"`
+	Nome       string `json:"nome"`
+	Email      string `json:"email"`
+	Telefone   string `json:"telefone"`
+	Nascimento string `json:"nascimento"`
+	CPF        string `json:"cpf"`
+	Senha      string `json:"senha"`
+}
