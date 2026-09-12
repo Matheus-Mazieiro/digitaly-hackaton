@@ -1,19 +1,19 @@
 import { useNavigate } from 'react-router-dom';
 import { useApp } from '../../context/AppContext';
 import { Icon } from '../../lib/icons';
-import { Avatar } from '../../components/Shared';
+import { Avatar, BackButton } from '../../components/Shared';
 
 export default function Patients() {
   const navigate = useNavigate();
   const { patientName, patientSearch, setPatientSearch } = useApp();
   const q = (patientSearch || '').toLowerCase();
-  const list = [patientName, 'Marcos Aurélio Lima'].filter((n) => n.toLowerCase().includes(q));
+  const list = [patientName, 'Marcos Aurélio Lima'].filter((n) =>
+    n.toLowerCase().includes(q),
+  );
 
   return (
     <>
-      <button className="btn-ghost btn-sm" style={{ marginBottom: 8 }} onClick={() => navigate('/doctor/dashboard')}>
-        <Icon name="arrowLeft" /> Início
-      </button>
+      <BackButton label="Início" onClick={() => navigate('/doctor/dashboard')} />
       <h1 className="page-title">Pacientes</h1>
       <div className="page-sub">Pacientes atendidos por você.</div>
       <input
@@ -34,11 +34,13 @@ export default function Patients() {
               <Avatar name={n} size={42} fontSize={14} />
               <div style={{ fontWeight: 500 }}>{n}</div>
             </div>
-            <Icon name="chevronRight" style={{ color: 'var(--g500)' }} />
+            <Icon name="chevronRight" style={{ color: 'var(--texto-3)' }} />
           </div>
         ))}
         {!list.length && (
-          <div className="card muted small" style={{ textAlign: 'center', padding: 30 }}>Nenhum paciente encontrado.</div>
+          <div className="card muted small" style={{ textAlign: 'center', padding: 30 }}>
+            Nenhum paciente encontrado.
+          </div>
         )}
       </div>
     </>

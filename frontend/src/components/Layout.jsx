@@ -1,25 +1,24 @@
 import { NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom';
 import { useApp } from '../context/AppContext';
 import { Icon } from '../lib/icons';
-import { Avatar } from './Shared';
+import { Avatar, Logo } from './Shared';
 
 const PATIENT_NAV = [
-  { to: '/patient/dashboard', label: 'Início', icon: 'home', id: 'dashboard' },
-  { to: '/patient/appointments', label: 'Minhas consultas', icon: 'calendar', id: 'appointments' },
-  { to: '/patient/schedule/specialty', label: 'Agendar consulta', icon: 'plusCalendar', id: 'schedule' },
-  { to: '/patient/history', label: 'Histórico', icon: 'history', id: 'history' },
-  { to: '/patient/documents', label: 'Laudos e documentos', icon: 'file', id: 'documents' },
-  { to: '/patient/notifications', label: 'Notificações', icon: 'bell', id: 'notifications' },
-  { to: '/patient/profile', label: 'Perfil e configurações', icon: 'settings', id: 'profile' },
+  { to: '/patient/dashboard', label: 'Início', icon: 'home' },
+  { to: '/patient/appointments', label: 'Minhas consultas', icon: 'calendar' },
+  { to: '/patient/schedule/specialty', label: 'Agendar consulta', icon: 'plusCalendar' },
+  { to: '/patient/notifications', label: 'Notificações', icon: 'bell' },
+  { to: '/patient/profile', label: 'Perfil e configurações', icon: 'settings' },
 ];
 
 const DOCTOR_NAV = [
-  { to: '/doctor/dashboard', label: 'Início', icon: 'home', id: 'dashboard' },
-  { to: '/doctor/agenda', label: 'Agenda', icon: 'calendar', id: 'agenda' },
-  { to: '/doctor/history', label: 'Histórico', icon: 'history', id: 'history' },
-  { to: '/doctor/patients', label: 'Pacientes', icon: 'users', id: 'patients' },
-  { to: '/doctor/notifications', label: 'Notificações', icon: 'bell', id: 'notifications' },
-  { to: '/doctor/profile', label: 'Perfil e configurações', icon: 'settings', id: 'profile' },
+  { to: '/doctor/dashboard', label: 'Início', icon: 'home' },
+  { to: '/doctor/agenda', label: 'Agenda', icon: 'calendar' },
+  { to: '/doctor/availability', label: 'Disponibilidade', icon: 'clock' },
+  { to: '/doctor/consultas', label: 'Consultas', icon: 'history' },
+  { to: '/doctor/patients', label: 'Pacientes', icon: 'users' },
+  { to: '/doctor/notifications', label: 'Notificações', icon: 'bell' },
+  { to: '/doctor/profile', label: 'Perfil e configurações', icon: 'settings' },
 ];
 
 function Sidebar({ nav, role, userName }) {
@@ -34,8 +33,7 @@ function Sidebar({ nav, role, userName }) {
   return (
     <aside className="sidebar">
       <div className="sidebar-brand">
-        <div className="brand-mark" />
-        <div className="brand-name">Digitaly Hub</div>
+        <Logo height={34} />
       </div>
       <div className="nav-group">
         {nav.map((n) => (
@@ -53,10 +51,17 @@ function Sidebar({ nav, role, userName }) {
         <div className="flex-center" style={{ padding: '8px 12px' }}>
           <Avatar name={userName} size={36} />
           <div style={{ overflow: 'hidden' }}>
-            <div style={{ fontSize: 13, fontWeight: 500, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+            <div
+              style={{
+                fontSize: 13, fontWeight: 500, whiteSpace: 'nowrap',
+                overflow: 'hidden', textOverflow: 'ellipsis',
+              }}
+            >
               {userName}
             </div>
-            <div className="small muted">{role === 'patient' ? 'Paciente' : 'Médico(a)'}</div>
+            <div className="small muted">
+              {role === 'patient' ? 'Paciente' : 'Médico(a)'}
+            </div>
           </div>
         </div>
         <button className="nav-item" onClick={onLogout}>
@@ -110,10 +115,16 @@ function DemoBar() {
     <div className="demo-bar glass">
       <span className="lbl">Modo demonstração</span>
       <div className="demo-switch">
-        <button className={role === 'patient' ? 'active' : ''} onClick={() => switchRole('patient')}>
+        <button
+          className={role === 'patient' ? 'active' : ''}
+          onClick={() => switchRole('patient')}
+        >
           <Icon name="user" size={14} /> Paciente
         </button>
-        <button className={role === 'doctor' ? 'active' : ''} onClick={() => switchRole('doctor')}>
+        <button
+          className={role === 'doctor' ? 'active' : ''}
+          onClick={() => switchRole('doctor')}
+        >
           <Icon name="activity" size={14} /> Médico
         </button>
       </div>
@@ -124,8 +135,6 @@ function DemoBar() {
 const TITLES = {
   dashboard: 'Início',
   appointments: 'Minhas consultas',
-  history: 'Histórico',
-  documents: 'Laudos e documentos',
   notifications: 'Notificações',
   profile: 'Perfil e configurações',
   schedule: 'Agendar consulta',
@@ -134,6 +143,8 @@ const TITLES = {
   summary: 'Resumo da consulta',
   review: 'Avaliar médico',
   agenda: 'Agenda',
+  availability: 'Disponibilidade',
+  consultas: 'Consultas',
   patients: 'Pacientes',
 };
 
@@ -143,9 +154,9 @@ export function AppShell() {
 
   const nav = role === 'patient' ? PATIENT_NAV : DOCTOR_NAV;
   const isCall = location.pathname.endsWith('/call');
-  const userName = role === 'patient' ? patientName : doctorById(doctorId)?.name || 'Médico(a)';
+  const userName =
+    role === 'patient' ? patientName : doctorById(doctorId)?.name || 'Médico(a)';
 
-  // derive segment title
   const segment = location.pathname.split('/')[2] || 'dashboard';
   const title = TITLES[segment] || 'Digitaly Hub';
   const notifTo = role === 'patient' ? '/patient/notifications' : '/doctor/notifications';
@@ -154,8 +165,13 @@ export function AppShell() {
     <div className="app-shell">
       <Sidebar nav={nav} role={role} userName={userName} />
       <div className="main-col">
-        {!isCall && <Topbar title={title} unreadCount={unreadCount} notifTo={notifTo} />}
-        <div className="content" style={isCall ? { maxWidth: 1400, padding: '20px 28px' } : undefined}>
+        {!isCall && (
+          <Topbar title={title} unreadCount={unreadCount} notifTo={notifTo} />
+        )}
+        <div
+          className="content"
+          style={isCall ? { maxWidth: 1400, padding: '20px 28px' } : undefined}
+        >
           <Outlet />
         </div>
       </div>
