@@ -12,7 +12,7 @@ Cada task tem: o que fazer, "pronto quando", tempo estimado e dependências.
 | ID | Task | Pronto quando | Dono |
 |---|---|---|---|
 | S0 | Subir estrutura Go completa (pastas `config/model/repositories/services/handlers/ws/routes`), env, `.gitignore`, Makefile | `go build` e `go run` sobem | BA |
-| S1 | SQLite + migrations + seeds (7 especialidades, ~6 médicos demo com CRM/UF, senhas hash) | `go run` cria o banco e popula | BA |
+| S1 | PostgreSQL (docker compose) + migrations + seeds (7 especialidades, ~6 médicos demo com CRM/UF, senhas hash) | `docker compose up` cria e popula o banco | BA |
 | S2 | Cliente `frontend/src/lib/api.js` com todas as rotas do contrato + helpers de auth (Bearer) | chamadas tipadas prontas (ainda sem backend) | FA |
 | S3 | Fixtures JSON de contrato (médicos, slots, consultas) para o front construir antes do back | front roda contra fixtures | FA |
 
@@ -24,7 +24,7 @@ Cada task tem: o que fazer, "pronto quando", tempo estimado e dependências.
 
 | ID | Task | Pronto quando | Tempo | Depende |
 |---|---|---|---|---|
-| BA1 | Modelos (Paciente, Médico, Consulta, Notificacao) + repositório base CRUD | structs + queries no SQLite | 1h | S1 |
+| BA1 | Modelos (Paciente, Médico, Consulta, Notificacao) + repositório base CRUD | structs + queries no PostgreSQL | 1h | S1 |
 | BA2 | JWT (gerar/validar) + bcrypt + middleware de auth e role | middleware protege rotas | 1h | BA1 |
 | BA3 | `mailer` (interface + implementação do provedor) + serviço de código 2FA (gerar, expirar 5min, reenviar) | envia e-mail de verdade; código com expiração | 1h | BA1 |
 | BA4 | Validação de formato: CPF, e-mail, CRM (UF+número), senha mínima | funções de validação + testes | 0.5h | BA1 |
