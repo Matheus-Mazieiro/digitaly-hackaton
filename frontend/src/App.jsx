@@ -5,20 +5,27 @@ import ToastHost from './components/ToastHost';
 import { AppShell } from './components/Layout';
 
 // auth
-import { Login, SignupPatient, SignupDoctor, CrmValidating, TwoFA } from './pages/auth/AuthScreens';
+import {
+  Login,
+  SignupPatient,
+  SignupDoctor,
+  CrmValidating,
+  TwoFA,
+} from './pages/auth/AuthScreens';
 
 // patient
 import PatientDashboard from './pages/patient/Dashboard';
 import {
-  ScheduleSpecialty, ScheduleDate, ScheduleDoctor, ScheduleConfirm, ScheduleCode,
+  ScheduleSpecialty,
+  ScheduleDate,
+  ScheduleDoctor,
+  ScheduleConfirm,
+  ScheduleCode,
 } from './pages/patient/Schedule';
 import Appointments from './pages/patient/Appointments';
 import AppointmentDetail from './pages/patient/AppointmentDetail';
 import Preroom from './pages/patient/Preroom';
 import PatientCall from './pages/patient/Call';
-import History from './pages/patient/History';
-import Summary from './pages/patient/Summary';
-import Documents from './pages/patient/Documents';
 import Review from './pages/patient/Review';
 import Profile from './pages/patient/Profile';
 import PatientNotifications from './pages/patient/Notifications';
@@ -26,10 +33,10 @@ import PatientNotifications from './pages/patient/Notifications';
 // doctor
 import DoctorDashboard from './pages/doctor/Dashboard';
 import Agenda from './pages/doctor/Agenda';
-import DoctorAppointmentDetail from './pages/doctor/AppointmentDetail';
+import Availability from './pages/doctor/Availability';
+import Consultas from './pages/doctor/Consultas';
+import ConsultaDetail from './pages/doctor/ConsultaDetail';
 import DoctorCall from './pages/doctor/Call';
-import DoctorHistory from './pages/doctor/History';
-import DoctorHistoryDetail from './pages/doctor/HistoryDetail';
 import Patients from './pages/doctor/Patients';
 import PatientProfile from './pages/doctor/PatientProfile';
 import DoctorProfile from './pages/doctor/Profile';
@@ -73,12 +80,23 @@ function AppRoutes() {
         <Route path="appointments/:id" element={<AppointmentDetail />} />
         <Route path="preroom" element={<Preroom />} />
         <Route path="call" element={<PatientCall />} />
-        <Route path="history" element={<History />} />
-        <Route path="summary/:id" element={<Summary />} />
-        <Route path="documents" element={<Documents />} />
         <Route path="review/:id" element={<Review />} />
         <Route path="profile" element={<Profile />} />
         <Route path="notifications" element={<PatientNotifications />} />
+
+        {/* rotas antigas → redirect */}
+        <Route
+          path="history"
+          element={<Navigate to="/patient/appointments" replace />}
+        />
+        <Route
+          path="documents"
+          element={<Navigate to="/patient/appointments" replace />}
+        />
+        <Route
+          path="summary/:id"
+          element={<Navigate to="/patient/appointments" replace />}
+        />
       </Route>
 
       {/* médico */}
@@ -93,18 +111,31 @@ function AppRoutes() {
         <Route index element={<Navigate to="/doctor/dashboard" replace />} />
         <Route path="dashboard" element={<DoctorDashboard />} />
         <Route path="agenda" element={<Agenda />} />
-        <Route path="appointments/:id" element={<DoctorAppointmentDetail />} />
+        <Route path="availability" element={<Availability />} />
+        <Route path="consultas" element={<Consultas />} />
+        <Route path="consultas/:id" element={<ConsultaDetail />} />
         <Route path="call" element={<DoctorCall />} />
-        <Route path="history" element={<DoctorHistory />} />
-        <Route path="history/:id" element={<DoctorHistoryDetail />} />
         <Route path="patients" element={<Patients />} />
         <Route path="patients/:name" element={<PatientProfile />} />
         <Route path="profile" element={<DoctorProfile />} />
         <Route path="notifications" element={<DoctorNotifications />} />
+
+        {/* rotas antigas → redirect */}
+        <Route
+          path="history"
+          element={<Navigate to="/doctor/consultas" replace />}
+        />
+        <Route
+          path="appointments/:id"
+          element={<Navigate to="/doctor/consultas" replace />}
+        />
       </Route>
 
       {/* raiz */}
-      <Route path="/" element={<Navigate to={role ? `/${role}/dashboard` : '/login'} replace />} />
+      <Route
+        path="/"
+        element={<Navigate to={role ? `/${role}/dashboard` : '/login'} replace />}
+      />
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
   );

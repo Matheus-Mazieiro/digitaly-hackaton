@@ -3,7 +3,7 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { useApp } from '../../context/AppContext';
 import { useToast } from '../../context/ToastContext';
 import { Icon } from '../../lib/icons';
-import { Avatar } from '../../components/Shared';
+import { Avatar, BackButton } from '../../components/Shared';
 
 export default function Review() {
   const navigate = useNavigate();
@@ -23,20 +23,20 @@ export default function Review() {
     const chosen = stars || 5;
     addReview(doc.id, chosen, text);
     patchAppointment(a.id, { reviewed: true });
-    toast('Obrigado pela sua avaliação!', 'star', 'var(--c400)');
-    navigate('/patient/history');
+    toast('Obrigado pela sua avaliação!', 'star', 'var(--celeste-400)');
+    navigate('/patient/appointments');
   };
 
   return (
     <div style={{ maxWidth: 440, margin: '10px auto 0' }}>
-      <button className="btn-ghost btn-sm" onClick={() => navigate('/patient/history')}>
-        <Icon name="arrowLeft" /> Voltar
-      </button>
-      <div className="card card-hero" style={{ textAlign: 'center', marginTop: 14 }}>
+      <BackButton onClick={() => navigate(`/patient/appointments/${a.id}`)} />
+      <div className="card card-hero" style={{ textAlign: 'center', marginTop: 6 }}>
         <div style={{ margin: '0 auto 14px' }}>
           <Avatar name={doc.name} size={56} />
         </div>
-        <div style={{ fontSize: 17, fontWeight: 600 }}>Como foi sua consulta com {doc.name}?</div>
+        <div style={{ fontSize: 17, fontWeight: 500 }}>
+          Como foi sua consulta com {doc.name}?
+        </div>
         <div className="stars" style={{ justifyContent: 'center', margin: '18px 0' }}>
           {[1, 2, 3, 4, 5].map((n) => (
             <button

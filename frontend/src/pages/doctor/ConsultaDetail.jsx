@@ -4,93 +4,100 @@ import { useToast } from '../../context/ToastContext';
 import { Icon } from '../../lib/icons';
 import { Avatar, StatusBadge, BackButton } from '../../components/Shared';
 import { fmtDateFullLong } from '../../lib/utils';
-import { appointmentAccessInfo, humanizeTimeUntil, fmtHM } from '../../lib/mock';
 
-export default function AppointmentDetail() {
+export default function ConsultaDetail() {
   const navigate = useNavigate();
   const { id } = useParams();
-  const { apptById, doctorById, specialtyById, patchAppointment } = useApp();
+  const { apptById, patientName, patchAppointment, pushNotification } = useApp();
   const { toast } = useToast();
 
   const a = apptById(Number(id));
   if (!a) return <div className="card">Consulta não encontrada.</div>;
 
-  const doc = doctorById(a.doctorId);
-  const spec = specialtyById(doc.specialty);
-
   const isFuture = ['agendada', 'confirmada', 'em_andamento'].includes(a.status);
   const isPast = a.status === 'concluida';
-
-  const access = appointmentAccessInfo(a);
-  const canJoin = access.canJoin;
+  const inProgress = a.status === 'em_andamento';
 
   const patientDocs = a.patientDocuments || [];
   const doctorDocs = a.documents || [];
   const allDocs = [...doctorDocs, ...patientDocs];
 
-  const handlePatientUpload = () => {
+  const startCall = () => {
+    patchAppointment(a.id, { status: 'em_andamento' });
+    pushNotification('Seu médico entrou na sala.', 'started');
+    navigate('/doctor/call');
+  };
+
+  const handleDoctorUpload = () => {
     const newDoc = {
-      name: 'Documento enviado pelo paciente',
-      type: 'Documento',
-      from: 'Paciente',
+      name: 'Documento emitido pelo médico',
+      type: 'Laudo',
+      from: 'Médico',
       date: new Date().toISOString().slice(0, 10),
     };
     patchAppointment(a.id, (prev) => ({
-      patientDocuments: [...(prev.patientDocuments || []), newDoc],
+      documents: [...(prev.documents || []), newDoc],
     }));
     toast('Documento anexado à consulta.', 'upload', 'var(--success)');
   };
 
   return (
     <>
-      <BackButton onClick={() => navigate('/patient/appointments')} />
+      <BackButton onClick={() => navigate('/doctor/consultas')} />
 
       <h1 className="page-title" style={{ fontSize: 24 }}>
-        Detalhes da consulta
+        Consulta com {patientName}
       </h1>
+      <div className="page-sub">
+        {fmtDateFullLong(a.date)} · {a.time}
+      </div>
 
-      <div className="card card-hero">
-        <div className="flex-center">
-          <Avatar name={doc.name} size={52} />
-          <div>
-            <div style={{ fontWeight: 500 }}>{doc.name}</div>
-            <div className="small muted">{spec.name}</div>
+      <div
+        className="card card-hero"
+        style={
+          isFuture
+            ? {
+                background: 'linear-gradient(135deg, rgba(0,159,255,0.08), rgba(38,42,49,0.6))',
+                borderColor: 'var(--celeste-600)',
+              }
+            : undefined
+        }
+      >
+        <div className="row-between" style={{ flexWrap: 'wrap', gap: 10 }}>
+          <div className="flex-center">
+            <Avatar name={patientName} size={52} />
+            <div>
+              <div style={{ fontWeight: 500 }}>{patientName}</div>
+              <div className="small muted">27 anos · Particular</div>
+            </div>
           </div>
+          <StatusBadge status={a.status} />
         </div>
+
         <hr className="divider" />
+
         <div className="grid-2">
           <div>
-            <div className="small muted">Data</div>
-            <div style={{ fontWeight: 500 }}>{fmtDateFullLong(a.date)}</div>
-          </div>
-          <div>
-            <div className="small muted">Horário</div>
-            <div className="num" style={{ fontWeight: 500 }}>{a.time}</div>
-          </div>
-          <div>
-            <div className="small muted">Status</div>
-            <StatusBadge status={a.status} />
-          </div>
-          <div>
             <div className="small muted">Motivo</div>
-            <div style={{ fontWeight: 500 }}>{a.reason || '—'}</div>
+            <div style={{ fontWeight: 500 }}>{a.reason || 'Consulta'}</div>
+          </div>
+          <div>
+            <div className="small muted">Pré-consulta</div>
+            <div style={{ fontWeight: 500 }}>Sem alergias conhecidas</div>
           </div>
         </div>
       </div>
 
       {isFuture && (
-        <div style={{ display: 'flex', gap: 10, marginTop: 20, flexWrap: 'wrap', alignItems: 'center' }}>
-          {canJoin ? (
-            <button className="btn btn-primary" onClick={() => navigate('/patient/preroom')}>
-              <Icon name="video" /> Entrar na consulta
+        <div style={{ display: 'flex', gap: 10, marginTop: 20, flexWrap: 'wrap' }}>
+          {inProgress ? (
+            <button className="btn btn-primary" onClick={() => navigate('/doctor/call')}>
+              <Icon name="video" /> Continuar teleatendimento
             </button>
           ) : (
-            <div className="card small muted" style={{ flex: 1, minWidth: 260 }}>
-              <Icon name="info" size={14} style={{ verticalAlign: -2, marginRight: 6 }} />
-              {access.reason === 'too_early' && access.opensAt
-                ? `A sala abre às ${fmtHM(access.opensAt)} (${humanizeTimeUntil(access.msUntil)}).`
-                : 'A sala será liberada próximo do horário da consulta.'}
-            </div>
+            <button className="btn btn-primary" onClick={startCall}>
+              <Icon name="video" /> Iniciar teleatendimento
+            </button>
           )}
         </div>
       )}
@@ -132,7 +139,7 @@ export default function AppointmentDetail() {
       <div style={{ marginTop: 24 }}>
         <div className="row-between" style={{ marginBottom: 14, flexWrap: 'wrap', gap: 10 }}>
           <div className="section-title" style={{ margin: 0 }}>Documentos e laudos</div>
-          <button className="btn btn-secondary btn-sm" onClick={handlePatientUpload}>
+          <button className="btn btn-secondary btn-sm" onClick={handleDoctorUpload}>
             <Icon name="upload" size={14} /> Adicionar documento
           </button>
         </div>
@@ -176,20 +183,12 @@ export default function AppointmentDetail() {
           {!allDocs.length && (
             <div className="card muted small" style={{ textAlign: 'center', padding: 20 }}>
               {isFuture
-                ? 'Nenhum documento ainda. Você pode adicionar exames ou encaminhamentos antes da consulta.'
+                ? 'Nenhum documento ainda. O paciente pode enviar exames ou encaminhamentos antes da consulta.'
                 : 'Nenhum documento nesta consulta.'}
             </div>
           )}
         </div>
       </div>
-
-      {isPast && !a.reviewed && (
-        <div style={{ display: 'flex', gap: 10, marginTop: 20, flexWrap: 'wrap' }}>
-          <button className="btn btn-primary" onClick={() => navigate(`/patient/review/${a.id}`)}>
-            <Icon name="star" /> Avaliar médico
-          </button>
-        </div>
-      )}
     </>
   );
 }
