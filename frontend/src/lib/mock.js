@@ -1,6 +1,9 @@
 import { dateKey } from './utils';
 
 export const TODAY = new Date(2026, 8, 12); // 12/set/2026 — data base da demo
+export const NOW = new Date(2026, 8, 12, 15, 50); // "agora" do demo: 12/set 15:50
+
+export const JOIN_WINDOW_MS = 15 * 60 * 1000; // 15 min antes
 
 export function addDays(n) {
   const d = new Date(TODAY);
@@ -18,12 +21,13 @@ export const SPECIALTIES = [
   { id: 'gineco', name: 'Ginecologia', icon: 'shield' },
 ];
 
-// slots com chaves pré-computadas para o mock
+const k0 = dateKey(addDays(0));
 const k1 = dateKey(addDays(1));
 const k2 = dateKey(addDays(2));
 const k3 = dateKey(addDays(3));
 const k4 = dateKey(addDays(4));
-const k0 = dateKey(addDays(0));
+const k5 = dateKey(addDays(5));
+const k7 = dateKey(addDays(7));
 
 export const DOCTORS = [
   { id: 'd1', name: 'Dra. Ana Martins', specialty: 'derma', crm: '112938', crmState: 'SP', rating: 4.9, reviews: 128, bio: 'Especialista em dermatologia clínica e estética, com foco em acompanhamento contínuo.', slots: { [k1]: ['09:00', '09:30', '10:00', '11:30'], [k2]: ['14:00', '15:00'] } },
@@ -35,6 +39,7 @@ export const DOCTORS = [
 ];
 
 export const APPOINTMENTS_SEED = [
+  // passado (concluída)
   {
     id: 1, doctorId: 'd3', date: dateKey(addDays(-6)), time: '10:00', status: 'concluida',
     reason: 'Dor de cabeça recorrente', hasSummary: true, hasReport: true, reviewed: true,
@@ -46,7 +51,26 @@ export const APPOINTMENTS_SEED = [
     },
     documents: [{ name: 'Receita — Analgésico', type: 'Receita', from: 'Médico' }],
   },
-  { id: 2, doctorId: 'd3', date: dateKey(addDays(1)), time: '09:00', status: 'confirmada', reason: 'Consulta de rotina' },
+  {
+    id: 5, doctorId: 'd1', date: dateKey(addDays(-14)), time: '11:00', status: 'concluida',
+    reason: 'Avaliação dermatológica', hasSummary: true, hasReport: true, reviewed: true,
+    summary: {
+      motivo: 'Avaliação de mancha na pele.',
+      pontos: 'Lesão benigna, sem necessidade de intervenção. Orientada fotoproteção.',
+      orientacoes: 'Uso diário de protetor solar FPS 50.',
+      proximos: 'Retorno anual para acompanhamento.',
+    },
+    documents: [{ name: 'Laudo dermatológico', type: 'Laudo', from: 'Médico' }],
+  },
+
+  // hoje — dentro da janela dos 15 min (NOW = 15:50, consulta às 16:00)
+  { id: 20, doctorId: 'd3', date: k0, time: '16:00', status: 'confirmada', reason: 'Retorno' },
+
+  // próximos dias / semanas
+  { id: 2, doctorId: 'd3', date: k1, time: '09:00', status: 'confirmada', reason: 'Consulta de rotina' },
+  { id: 21, doctorId: 'd3', date: k3, time: '14:00', status: 'confirmada', reason: 'Acompanhamento' },
+  { id: 22, doctorId: 'd3', date: k5, time: '10:30', status: 'agendada', reason: 'Avaliação' },
+  { id: 23, doctorId: 'd3', date: k7, time: '15:00', status: 'agendada', reason: 'Retorno' },
 ];
 
 export const NOTIFICATIONS_SEED = [
@@ -72,3 +96,47 @@ export const INSIGHT_TRIGGERS = {
   4: { kind: 'info', text: 'Foi mencionada utilização recente de medicamento por conta própria.' },
   6: { kind: 'suggestion', text: 'Considere esclarecer duração, frequência e possíveis gatilhos do sintoma.' },
 };
+
+/* ============================================================
+   REGRA DE ACESSO À SALA
+   - em_andamento: sempre entra
+   - 15 min antes até 1h depois do horário: entra
+   - fora disso: bloqueado, com aviso de quando abre
+   ============================================================ */
+export function appointmentAccessInfo(appt, now = NOW) {
+  if (!appt) return { canJoin: false, reason: 'not_found' };
+
+  if (appt.status === 'em_andamento') return { canJoin: true, reason: 'live' };
+  if (appt.status === 'concluida') return { canJoin: false, reason: 'finished' };
+  if (appt.status === 'cancelada') return { canJoin: false, reason: 'cancelled' };
+
+  const dt = new Date(`${appt.date}T${appt.time}:00`);
+  const msUntil = dt.getTime() - now.getTime();
+
+  // pode entrar 15 min antes, e fica aberto por até 1h após o horário
+  const ONE_HOUR = 60 * 60 * 1000;
+  if (msUntil <= JOIN_WINDOW_MS && msUntil > -ONE_HOUR) {
+    return { canJoin: true, reason: 'window', msUntil };
+  }
+
+  return {
+    canJoin: false,
+    reason: 'too_early',
+    opensAt: new Date(dt.getTime() - JOIN_WINDOW_MS),
+    msUntil,
+  };
+}
+
+/* formata "faltam X minutos" / "abre às HH:MM" */
+export function humanizeTimeUntil(ms) {
+  if (ms <= 0) return 'agora';
+  const totalMin = Math.ceil(ms / 60000);
+  if (totalMin < 60) return `em ${totalMin} min`;
+  const h = Math.floor(totalMin / 60);
+  const m = totalMin % 60;
+  return m ? `em ${h}h ${m}min` : `em ${h}h`;
+}
+
+export function fmtHM(date) {
+  return date.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+}

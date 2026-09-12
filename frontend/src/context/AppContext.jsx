@@ -14,8 +14,19 @@ const EMPTY_BOOKING = {
   specialty: null, date: null, doctorId: null, time: null, sort: 'rating', reason: null,
 };
 
+// Disponibilidade padrão do médico (1=seg … 0=dom)
+const DEFAULT_AVAILABILITY = {
+  1: ['08:00', '08:30', '09:00', '10:00', '14:00', '15:00'],
+  2: ['08:00', '09:00', '10:00', '14:00', '15:00'],
+  3: ['08:00', '08:30', '09:00', '10:00', '14:00', '15:00'],
+  4: ['08:00', '09:00', '14:00', '15:00'],
+  5: ['08:00', '09:00', '10:00'],
+  6: [],
+  0: [],
+};
+
 export function AppProvider({ children }) {
-  const [role, setRole] = useState(null);              // 'patient' | 'doctor' | null
+  const [role, setRole] = useState(null);
   const [pendingRole, setPendingRole] = useState(null);
   const [patientName] = useState('Nathalia Souza');
   const [doctorId] = useState('d3');
@@ -24,6 +35,8 @@ export function AppProvider({ children }) {
   const [appointments, setAppointments] = useState(APPOINTMENTS_SEED);
   const [notifications, setNotifications] = useState(NOTIFICATIONS_SEED);
   const [reviews, setReviews] = useState(REVIEWS_SEED);
+
+  const [availability, setAvailability] = useState(DEFAULT_AVAILABILITY);
 
   const [booking, setBooking] = useState(EMPTY_BOOKING);
   const [activeApptId, setActiveApptId] = useState(null);
@@ -94,32 +107,26 @@ export function AppProvider({ children }) {
 
   const value = useMemo(
     () => ({
-      // auth / role
       role, setRole, pendingRole, setPendingRole, logout,
-      // perfil
       patientName, doctorId,
-      // dados
       doctors, doctorById, specialtyById,
       appointments, apptById, patchAppointment, addAppointment,
       notifications, pushNotification, unreadCount,
       reviews, addReview,
-      // agendamento
+      availability, setAvailability,
       booking, setBooking, resetBooking,
-      // call / copiloto
       activeApptId, setActiveApptId,
       copilotTab, setCopilotTab, transcript, setTranscript, insights, setInsights,
-      // filtros / UI
       apptTab, setApptTab, patientSearch, setPatientSearch,
       selectedPatient, setSelectedPatient,
-      // helpers
       nextPatientAppt,
     }),
     [
       role, pendingRole, patientName, doctorId, doctors, doctorById, specialtyById,
       appointments, apptById, patchAppointment, addAppointment, notifications,
-      pushNotification, unreadCount, reviews, addReview, booking, resetBooking,
-      activeApptId, copilotTab, transcript, insights, apptTab, patientSearch,
-      selectedPatient, nextPatientAppt, logout,
+      pushNotification, unreadCount, reviews, addReview, availability,
+      booking, resetBooking, activeApptId, copilotTab, transcript, insights,
+      apptTab, patientSearch, selectedPatient, nextPatientAppt, logout,
     ],
   );
 

@@ -8,7 +8,13 @@ import { initials } from '../../lib/utils';
 
 export default function PatientCall() {
   const navigate = useNavigate();
-  const { nextPatientAppt, doctorById, patientName, patchAppointment, pushNotification } = useApp();
+  const {
+    nextPatientAppt,
+    doctorById,
+    patientName,
+    patchAppointment,
+    pushNotification,
+  } = useApp();
   const [seconds, setSeconds] = useState(0);
   const [confirmEnd, setConfirmEnd] = useState(false);
   const timer = useRef(null);
@@ -32,15 +38,23 @@ export default function PatientCall() {
         reviewed: false,
         summary: {
           motivo: 'Dor de cabeça recorrente relatada nas últimas semanas.',
-          pontos: 'Paciente relatou episódios quase diários, predominantemente à tarde, sem alterações visuais.',
-          orientacoes: 'Ajustar rotina de sono, manter boa hidratação e reduzir exposição a telas antes de dormir.',
-          proximos: 'Reavaliação em 30 dias caso os sintomas persistam.',
+          pontos:
+            'Paciente relatou episódios quase diários, predominantemente à tarde, sem alterações visuais.',
+          orientacoes:
+            'Ajustar rotina de sono, manter boa hidratação e reduzir exposição a telas antes de dormir.',
+          proximos:
+            'Reavaliação em 30 dias caso os sintomas persistam.',
         },
         documents: [{ name: 'Receita — Analgésico', type: 'Receita', from: 'Médico' }],
       });
-      pushNotification('Sua consulta foi concluída. O resumo já está disponível.', 'report');
+      pushNotification(
+        'Sua consulta foi concluída. O resumo já está disponível.',
+        'report',
+      );
+      navigate(`/patient/appointments/${a.id}`);
+    } else {
+      navigate('/patient/appointments');
     }
-    navigate('/patient/dashboard');
   };
 
   const mm = String(Math.floor(seconds / 60)).padStart(2, '0');
@@ -73,11 +87,22 @@ export default function PatientCall() {
       </div>
       {confirmEnd && (
         <Modal onClose={() => setConfirmEnd(false)}>
-          <div style={{ fontWeight: 600, fontSize: 16, marginBottom: 8 }}>Encerrar consulta?</div>
-          <div className="small muted" style={{ marginBottom: 20 }}>Isso finalizará o atendimento.</div>
+          <div style={{ fontWeight: 600, fontSize: 16, marginBottom: 8 }}>
+            Encerrar consulta?
+          </div>
+          <div className="small muted" style={{ marginBottom: 20 }}>
+            Isso finalizará o atendimento.
+          </div>
           <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end' }}>
-            <button className="btn btn-secondary btn-sm" onClick={() => setConfirmEnd(false)}>Cancelar</button>
-            <button className="btn btn-danger btn-sm" onClick={finish}>Encerrar consulta</button>
+            <button
+              className="btn btn-secondary btn-sm"
+              onClick={() => setConfirmEnd(false)}
+            >
+              Cancelar
+            </button>
+            <button className="btn btn-danger btn-sm" onClick={finish}>
+              Encerrar consulta
+            </button>
           </div>
         </Modal>
       )}

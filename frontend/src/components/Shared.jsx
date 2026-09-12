@@ -1,6 +1,36 @@
 import { Icon } from '../lib/icons';
 import { initials } from '../lib/utils';
 
+export const LOGO_WHITE =
+  'https://digitaly.tech/wp-content/uploads/2026/06/logo_digitaly_branca-scaled.png';
+export const LOGO_GRAY =
+  'https://digitaly.tech/wp-content/uploads/2026/06/logo_digitaly_cinza-scaled.png';
+
+/* ---------- Logo oficial ---------- */
+export function Logo({ variant = 'white', height = 34, style, className }) {
+  const src = variant === 'gray' ? LOGO_GRAY : LOGO_WHITE;
+  return (
+    <img
+      src={src}
+      alt="Digitaly Technology"
+      className={className}
+      style={{ height, width: 'auto', display: 'block', objectFit: 'contain', ...style }}
+    />
+  );
+}
+
+/* ---------- Back button (glass pill) ---------- */
+export function BackButton({ label = 'Voltar', onClick, style }) {
+  return (
+    <button type="button" className="btn-back" onClick={onClick} style={style}>
+      <span className="btn-back-icon">
+        <Icon name="arrowLeft" />
+      </span>
+      <span className="btn-back-label">{label}</span>
+    </button>
+  );
+}
+
 const STATUS_MAP = {
   agendada: ['neutral', 'Aguardando confirmação'],
   confirmada: ['info', 'Confirmada'],
@@ -17,7 +47,10 @@ export function StatusBadge({ status }) {
 
 export function Avatar({ name, size = 44, fontSize }) {
   return (
-    <div className="avatar" style={{ width: size, height: size, fontSize: fontSize || size * 0.32 }}>
+    <div
+      className="avatar"
+      style={{ width: size, height: size, fontSize: fontSize || size * 0.32 }}
+    >
       {initials(name)}
     </div>
   );
@@ -43,19 +76,20 @@ export function NotifRow({ n }) {
     <div className="flex-center" style={{ padding: '12px 8px' }}>
       <div
         style={{
-          width: 34, height: 34, borderRadius: 10, background: 'var(--g700)',
+          width: 34, height: 34, borderRadius: 10,
+          background: 'var(--grafite-700)',
           display: 'flex', alignItems: 'center', justifyContent: 'center',
-          color: 'var(--g300)', flexShrink: 0,
+          color: 'var(--texto-2)', flexShrink: 0,
         }}
       >
         <Icon name={NOTIF_ICONS[n.type] || 'bell'} size={15} />
       </div>
       <div style={{ flex: 1 }}>
-        <div className="small" style={{ color: 'var(--g100)' }}>{n.text}</div>
+        <div className="small" style={{ color: 'var(--texto)' }}>{n.text}</div>
         <div className="small muted">{n.time}</div>
       </div>
       {!n.read && (
-        <div style={{ width: 7, height: 7, borderRadius: '50%', background: 'var(--c500)' }} />
+        <div style={{ width: 7, height: 7, borderRadius: '50%', background: 'var(--celeste-500)' }} />
       )}
     </div>
   );
@@ -67,19 +101,21 @@ export function QuickAction({ icon, label, onClick }) {
       className="card clickable"
       onClick={onClick}
       style={{
-        textAlign: 'left', display: 'flex', flexDirection: 'column',
-        gap: 14, border: '1px solid var(--g700)', background: 'var(--g800)',
+        textAlign: 'left', display: 'flex', flexDirection: 'column', gap: 14,
+        border: '1px solid var(--borda)', background: 'var(--bg-elev-2)',
+        color: 'var(--texto)',
       }}
     >
       <div
         style={{
-          width: 36, height: 36, borderRadius: 11, background: 'rgba(0,159,255,0.1)',
-          color: 'var(--c400)', display: 'flex', alignItems: 'center', justifyContent: 'center',
+          width: 36, height: 36, borderRadius: 11,
+          background: 'rgba(0,159,255,0.1)', color: 'var(--celeste-400)',
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
         }}
       >
         <Icon name={icon} size={18} />
       </div>
-      <div style={{ fontWeight: 500, fontSize: 14 }}>{label}</div>
+      <div style={{ fontWeight: 500, fontSize: 14, color: 'var(--texto)' }}>{label}</div>
     </button>
   );
 }
