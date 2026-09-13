@@ -3,7 +3,7 @@
 - **Data:** 2026-09-12
 - **Status:** Aprovado (aguardando revisão final do time)
 - **Escopo:** MVP de teleconsulta — cadastro → agendamento → consulta (WebRTC) → transcrição/resumo por IA → prontuário e receita em PDF → avaliação.
-- **Stack:** Go (backend) · React/Vite (frontend) · SQLite · WebRTC P2P · OpenAI (`gpt-transcribe` + `gpt-4o-mini`) · provedor de e-mail transacional.
+- **Stack:** Go (backend) · React/Vite (frontend) · PostgreSQL · WebRTC P2P · OpenAI (`gpt-transcribe` + `gpt-4o-mini`) · provedor de e-mail transacional.
 - **Restrição de tempo:** 10 horas · 2 devs back · 2 devs front.
 
 ---
@@ -67,7 +67,7 @@ Preroom (janela de 15 min) → chamada WebRTC ao vivo → médico encerra
 
 ---
 
-## 4. Modelo de dados (SQLite)
+## 4. Modelo de dados (PostgreSQL)
 
 Nomes de tabela/campos seguem o esquema da descrição. Adições mínimas marcadas com **+**.
 
@@ -107,7 +107,7 @@ Nomes de tabela/campos seguem o esquema da descrição. Adições mínimas marca
 ## 5. Arquitetura
 
 ```
-[React front]  ──REST──►  [Go API]  ──►  [SQLite]
+[React front]  ──REST──►  [Go API]  ──►  [PostgreSQL]
      │                        │
      │──WebSocket signaling───┤   (sala por appointmentId)
      │                        │
@@ -123,9 +123,9 @@ Nomes de tabela/campos seguem o esquema da descrição. Adições mínimas marca
 Pacotes (hoje só existem stubs `model`, `repositories`, `services`, `handlers`, `routes`):
 
 - `cmd/server` — entrypoint (HTTP + WS).
-- `internal/config` — env (porta, caminho do SQLite, chaves OpenAI/e-mail).
+- `internal/config` — env (porta, connection string do PostgreSQL, chaves OpenAI/e-mail).
 - `internal/model` — structs das 4 entidades.
-- `internal/repositories` — acesso SQLite.
+- `internal/repositories` — acesso PostgreSQL (pgx).
 - `internal/services` — auth (JWT/bcrypt), 2FA (gera código → mailer), OpenAI, PDF, disponibilidade.
 - `internal/handlers` — handlers REST.
 - `internal/ws` — signaling WebRTC.
@@ -284,12 +284,12 @@ Eventos → `notificacoes`: consulta confirmada, médico entrou na sala, consult
 ### Fase 0 — contrato + fundação (todos, ~1h)
 
 - Aprovar esta spec (contrato da API).
-- Back: criar esqueleto Go completo, SQLite + migrations + seeds (especialidades, médicos de exemplo), middleware JWT, esboço do `lib/api.js`.
+- Back: criar esqueleto Go completo, PostgreSQL (docker compose) + migrations + seeds (especialidades, médicos de exemplo), middleware JWT, esboço do `lib/api.js`.
 - Front: definir o cliente `api.js` consumindo o contrato (rotas base, helpers de auth).
 
 ### Back A — Fundação + Auth + E-mail
 
-1. Config/env, SQLite, migrations, seeds, modelos.
+1. Config/env, conexão PostgreSQL, migrations, seeds, modelos.
 2. JWT + bcrypt + middleware.
 3. `mailer` (interface + provedor).
 4. Endpoints: signup/login/verify/resend/me.
@@ -332,7 +332,7 @@ Eventos → `notificacoes`: consulta confirmada, médico entrou na sala, consult
 - **Áudio perdido:** se a aba do médico fechar antes do upload, o áudio se perde (risco aceito; botão de retry).
 - **Custo/latência OpenAI:** `gpt-transcribe` é batch (ok); `gpt-4o-mini` é barato. Resposta do `/audio` é síncrona (pode levar alguns segundos).
 - **Provedor de e-mail:** exige credenciais antes da demo.
-- **SQLite:** arquivo único; sem concorrência de escrita pesada (ok para demo 1:1).
+- **PostgreSQL:** via Docker Compose (postgres:16-alpine); migrations/seeds rodam na primeira subida do container.
 - **Chaves necessárias:** OpenAI API key + credenciais do provedor de e-mail (o time deve prover).
 
 ---

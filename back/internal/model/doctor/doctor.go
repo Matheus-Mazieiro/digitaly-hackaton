@@ -15,6 +15,7 @@ type Doctor struct {
 	NConsultas    int       `json:"n_consultas"`
 	Especialidade string    `json:"especialidade"`
 	Senha         string    `json:"senha"`
+	Ativo         bool      `json:"ativo"`
 }
 
 type DoctorFilter struct {

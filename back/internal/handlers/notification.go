@@ -4,26 +4,28 @@ import (
 	"encoding/json"
 	"net/http"
 
-	"backend/internal/models"
-	"backend/internal/services"
+	"github.com/matheus-mazieiro/digitaly-hackaton/internal/model/notification"
+	"github.com/matheus-mazieiro/digitaly-hackaton/internal/services"
 )
 
-func GetNotification(w http.ResponseWriter, r *http.Request) {
-	query := r.URL.Query()
+func GetNotifications(w http.ResponseWriter, r *http.Request) {
+	q := r.URL.Query()
 
-	filter := models.NotificationFilter{
-		ID:   query.Get("id"),
-		Msg:  query.Get("msg"),
-		Data: query.Get("data"),
-		Usr:  query.Get("usr"),
+	filter := notification.NotificationFilter{
+		ID:   q.Get("id"),
+		Msg:  q.Get("msg"),
+		Data: q.Get("data"),
+		Usr:  q.Get("usr"),
+		Tipo: q.Get("tipo"),
+		Lida: q.Get("lida"),
 	}
 
-	notification, err := services.GetNotification(filter)
+	notifications, err := services.GetNotifications(r.Context(), filter)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(notification)
+	json.NewEncoder(w).Encode(notifications)
 }

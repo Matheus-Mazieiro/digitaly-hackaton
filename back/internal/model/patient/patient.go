@@ -10,6 +10,7 @@ type Patient struct {
 	Nascimento time.Time `json:"nascimento"`
 	CPF        string    `json:"cpf"`
 	Senha      string    `json:"senha"`
+	Ativo      bool      `json:"ativo"`
 }
 
 type PatientFilter struct {
