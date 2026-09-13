@@ -21,9 +21,7 @@ export default function PatientCall() {
 
   // Resolve a consulta prioritariamente pelo room da URL
   const roomParam = params.get('room');
-  const a = roomParam
-    ? apptById(Number(roomParam))
-    : nextPatientAppt();
+  const a = roomParam ? apptById(Number(roomParam)) : nextPatientAppt();
 
   const doc = a ? doctorById(a.doctorId) : null;
   const otherName = doc?.name || 'Médico(a)';
@@ -48,6 +46,8 @@ export default function PatientCall() {
     error,
     peerPresent,
     remoteActive,
+    remoteAudioBlocked,
+    unlockRemoteAudio,
     micOn,
     camOn,
     toggleMic,
@@ -93,16 +93,17 @@ export default function PatientCall() {
   const mm = String(Math.floor(seconds / 60)).padStart(2, '0');
   const ss = String(seconds % 60).padStart(2, '0');
 
-  const statusLabel = {
-    idle: 'Preparando a sala...',
-    'requesting-media': 'Pedindo acesso à câmera e microfone...',
-    connecting: peerPresent
-      ? 'Conectando com o outro participante...'
-      : 'Aguardando o outro participante entrar...',
-    connected: 'Conectado',
-    failed: 'Falha na conexão',
-    ended: 'Chamada encerrada',
-  }[status] || status;
+  const statusLabel =
+    {
+      idle: 'Preparando a sala...',
+      'requesting-media': 'Pedindo acesso à câmera e microfone...',
+      connecting: peerPresent
+        ? 'Conectando com o outro participante...'
+        : 'Aguardando o outro participante entrar...',
+      connected: 'Conectado',
+      failed: 'Falha na conexão',
+      ended: 'Chamada encerrada',
+    }[status] || status;
 
   if (!roomId) return null;
 
@@ -117,6 +118,21 @@ export default function PatientCall() {
             className="remote-video"
             style={{ display: remoteActive ? 'block' : 'none' }}
           />
+
+          {remoteActive && remoteAudioBlocked && (
+            <button
+              className="btn btn-primary btn-sm glass"
+              style={{
+                position: 'absolute',
+                bottom: 16,
+                left: '50%',
+                transform: 'translateX(-50%)',
+              }}
+              onClick={unlockRemoteAudio}
+            >
+              <Icon name="mic" size={14} /> Ativar som
+            </button>
+          )}
 
           {!remoteActive && (
             <div className="video-stage-fallback">
@@ -181,15 +197,6 @@ export default function PatientCall() {
             title={camOn ? 'Desligar câmera' : 'Ligar câmera'}
           >
             <Icon name={camOn ? 'video' : 'camOff'} />
-          </button>
-          <button className="ctrl-btn" title="Compartilhar tela (a implementar)">
-            <Icon name="screen" />
-          </button>
-          <button className="ctrl-btn" title="Enviar arquivo">
-            <Icon name="paperclip" />
-          </button>
-          <button className="ctrl-btn" title="Chat (a implementar)">
-            <Icon name="msg" />
           </button>
           <button
             className="ctrl-btn end"
