@@ -12,7 +12,7 @@ export default function DoctorAppointmentDetail() {
   const navigate = useNavigate();
   const { id } = useParams();
   const { apptById, appointments, patientName, patchAppointment, pushNotification } = useApp();
-  const a = apptById(Number(id));
+  const a = apptById(id);
   if (!a) return <div className="card">Consulta não encontrada.</div>;
 
   const past = appointments.filter((x) => x.status === 'concluida');

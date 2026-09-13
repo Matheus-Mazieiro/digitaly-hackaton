@@ -11,7 +11,7 @@ export default function Review() {
   const { apptById, doctorById, patchAppointment, addReview } = useApp();
   const { toast } = useToast();
 
-  const a = apptById(Number(id));
+  const a = apptById(id);
   const doc = a ? doctorById(a.doctorId) : null;
 
   const [stars, setStars] = useState(0);

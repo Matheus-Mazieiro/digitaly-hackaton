@@ -3,11 +3,6 @@ import { useApp } from '../../context/AppContext';
 import { Icon } from '../../lib/icons';
 import { Avatar, NotifRow, QuickAction, StatusBadge } from '../../components/Shared';
 import { fmtDateFull } from '../../lib/utils';
-import {
-  appointmentAccessInfo,
-  humanizeTimeUntil,
-  fmtHM,
-} from '../../lib/mock';
 
 export default function PatientDashboard() {
   const navigate = useNavigate();
@@ -23,15 +18,12 @@ export default function PatientDashboard() {
   const doc = next ? doctorById(next.doctorId) : null;
   const spec = doc ? specialtyById(doc.specialty) : null;
 
-  const access = appointmentAccessInfo(next);
-  const canJoin = access.canJoin;
-
-  let helperText = '';
-  if (!next) helperText = '';
-  else if (access.reason === 'live') helperText = 'Seu médico já está na sala.';
-  else if (access.reason === 'window') helperText = 'Sala liberada. Você já pode entrar.';
-  else if (access.reason === 'too_early')
-    helperText = `A sala abre às ${fmtHM(access.opensAt)} (${humanizeTimeUntil(access.msUntil)}).`;
+  const canJoin = Boolean(next);
+  const helperText = next
+    ? next.status === 'em_andamento'
+      ? 'Seu médico já está na sala.'
+      : 'Sala liberada. Você já pode entrar.'
+    : '';
 
   return (
     <>

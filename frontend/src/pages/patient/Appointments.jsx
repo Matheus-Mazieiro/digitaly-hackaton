@@ -7,11 +7,7 @@ import { fmtDateFull } from '../../lib/utils';
 
 function canJoin(a) {
   if (!a) return false;
-  if (a.status === 'em_andamento') return true;
-  if (['concluida', 'cancelada'].includes(a.status)) return false;
-  const dt = new Date(`${a.date}T${a.time}:00`);
-  const ms = dt.getTime() - Date.now();
-  return ms <= 15 * 60 * 1000 && ms > -60 * 60 * 1000;
+  return ['agendada', 'confirmada', 'em_andamento'].includes(a.status);
 }
 
 export default function Appointments() {

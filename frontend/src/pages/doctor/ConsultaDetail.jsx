@@ -17,7 +17,7 @@ export default function ConsultaDetail() {
   } = useApp();
   const { toast } = useToast();
 
-  const a = apptById(Number(id));
+  const a = apptById(id);
   if (!a) return <div className="card">Consulta não encontrada.</div>;
 
   const isFuture = ['agendada', 'confirmada', 'em_andamento'].includes(a.status);

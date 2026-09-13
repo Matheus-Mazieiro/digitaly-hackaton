@@ -7,7 +7,7 @@ export default function Summary() {
   const navigate = useNavigate();
   const { id } = useParams();
   const { apptById, doctorById } = useApp();
-  const a = apptById(Number(id));
+  const a = apptById(id);
   if (!a || !a.summary) return <div className="card">Resumo não encontrado.</div>;
   const doc = doctorById(a.doctorId);
 
