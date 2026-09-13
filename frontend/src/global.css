@@ -338,3 +338,85 @@ textarea.input{border-radius:16px; resize:vertical; min-height:80px;}
   .brand-logo{height:28px;}
   .auth-logo img{height:34px;}
 }
+/* ============================================================
+   WebRTC — vídeo da chamada
+   ============================================================ */
+.remote-video{
+  position:absolute;
+  inset:0;
+  width:100%;
+  height:100%;
+  object-fit:cover;
+  background:#000;
+  z-index:0;
+  border-radius:20px;
+}
+.local-video{
+  width:100%;
+  height:100%;
+  object-fit:cover;
+  border-radius:12px;
+  transform:scaleX(-1); /* espelha a câmera frontal */
+  display:block;
+}
+/* Sobrescreve só o que precisa. position:absolute + bottom/right vêm do bloco base. */
+.video-thumb{
+  overflow:hidden;
+  z-index:2;
+  width:200px;
+  height:150px;
+  box-shadow:0 8px 24px rgba(0,0,0,0.45);
+}
+.video-thumb-off{
+  position:absolute;
+  inset:0;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  background:rgba(11,13,16,0.75);
+}
+.video-stage-fallback{
+  position:absolute;
+  inset:0;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  justify-content:center;
+  gap:18px;
+  z-index:1;
+  padding:24px;
+  text-align:center;
+}
+.call-status{
+  padding:8px 16px;
+  border-radius:999px;
+  font-size:13px;
+  color:var(--texto-2);
+}
+.call-error{
+  display:flex;
+  align-items:center;
+  gap:10px;
+  padding:12px 16px;
+  border-radius:12px;
+  background:rgba(239,68,68,0.1);
+  border:1px solid rgba(239,68,68,0.3);
+  color:#FCA5A5;
+  font-size:13px;
+  line-height:1.4;
+  text-align:left;
+}
+.call-room-badge{
+  position:absolute;
+  top:16px;
+  left:50%;
+  transform:translateX(-50%);
+  padding:6px 12px;
+  border-radius:999px;
+  font-size:11.5px;
+  color:var(--texto-3);
+  z-index:3;
+}
+@media (max-width:640px){
+  .video-thumb{width:130px; height:98px;}
+}

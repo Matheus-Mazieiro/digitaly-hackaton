@@ -14,6 +14,7 @@ export default function DoctorDashboard() {
     patientName,
     patchAppointment,
     pushNotification,
+    setActiveApptId,
   } = useApp();
 
   const doc = doctorById(doctorId);
@@ -28,9 +29,10 @@ export default function DoctorDashboard() {
     .sort((a, b) => a.time.localeCompare(b.time));
 
   const startCall = (id) => {
+    setActiveApptId(id);
     patchAppointment(id, { status: 'em_andamento' });
     pushNotification('Seu médico entrou na sala.', 'started');
-    navigate('/doctor/call');
+    navigate(`/doctor/call?room=${id}`);
   };
 
   return (
@@ -50,7 +52,7 @@ export default function DoctorDashboard() {
             style={
               idx === 0
                 ? {
-                    borderColor: 'var(--c600)',
+                    borderColor: 'var(--celeste-600)',
                     background:
                       'linear-gradient(135deg, rgba(0,159,255,0.08), rgba(38,42,49,0.6))',
                   }
@@ -63,7 +65,7 @@ export default function DoctorDashboard() {
                 <div>
                   <div style={{ fontWeight: 500 }}>{patientName}</div>
                   <div className="small muted">
-                    {a.time} · {a.reason || 'Consulta'}
+                    {a.time} · {a.reason || 'Consulta'} · Sala #{a.id}
                   </div>
                 </div>
               </div>
@@ -90,10 +92,10 @@ export default function DoctorDashboard() {
 
         {!todayAppts.length && (
           <div className="card" style={{ textAlign: 'center', padding: 40 }}>
-            <div style={{ color: 'var(--g500)', marginBottom: 10 }}>
+            <div style={{ color: 'var(--texto-3)', marginBottom: 10 }}>
               <Icon name="calendar" size={30} />
             </div>
-            <div style={{ fontWeight: 600, marginBottom: 4 }}>
+            <div style={{ fontWeight: 500, marginBottom: 4 }}>
               Nenhuma consulta hoje
             </div>
             <div className="small muted" style={{ marginBottom: 18 }}>
