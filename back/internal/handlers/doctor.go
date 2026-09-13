@@ -13,17 +13,14 @@ func GetDoctors(w http.ResponseWriter, r *http.Request) {
 
 	filter := doctor.DoctorFilter{
 		ID:            q.Get("id"),
-		Nome:          q.Get("nome"),
+		Nome:          q.Get("name"),
 		Email:         q.Get("email"),
-		Telefone:      q.Get("telefone"),
-		Nascimento:    q.Get("nascimento"),
+		Telefone:      q.Get("phone"),
+		Nascimento:    q.Get("birthDate"),
 		CPF:           q.Get("cpf"),
 		CRM:           q.Get("crm"),
-		Biografia:     q.Get("biografia"),
-		AvaliacaoSoma: q.Get("avaliacao_soma"),
-		NConsultas:    q.Get("n_consultas"),
-		Especialidade: q.Get("especialidade"),
-		Senha:         q.Get("senha"),
+		Biografia:     q.Get("bio"),
+		Especialidade: q.Get("specialty"),
 	}
 
 	doctors, err := services.GetDoctors(r.Context(), filter)

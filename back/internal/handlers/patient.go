@@ -13,12 +13,11 @@ func GetPatients(w http.ResponseWriter, r *http.Request) {
 
 	filter := patient.PatientFilter{
 		ID:         q.Get("id"),
-		Nome:       q.Get("nome"),
+		Nome:       q.Get("name"),
 		Email:      q.Get("email"),
-		Telefone:   q.Get("telefone"),
-		Nascimento: q.Get("nascimento"),
+		Telefone:   q.Get("phone"),
+		Nascimento: q.Get("birthDate"),
 		CPF:        q.Get("cpf"),
-		Senha:      q.Get("senha"),
 	}
 
 	patients, err := services.GetPatients(r.Context(), filter)
