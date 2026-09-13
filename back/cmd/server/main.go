@@ -10,6 +10,7 @@ import (
 	"github.com/matheus-mazieiro/digitaly-hackaton/internal/config"
 	"github.com/matheus-mazieiro/digitaly-hackaton/internal/repositories"
 	"github.com/matheus-mazieiro/digitaly-hackaton/internal/routes"
+	"github.com/matheus-mazieiro/digitaly-hackaton/internal/services"
 )
 
 func main() {
@@ -34,6 +35,7 @@ func main() {
 		log.Fatalf("erro ao conectar no PostgreSQL: %v", err)
 	}
 	repositories.Init(pool)
+	services.InitAuth(cfg)
 
 	// --- Aviso se a chave OpenAI não estiver configurada ---
 	if os.Getenv("API_TOKEN") == "" {
@@ -48,7 +50,7 @@ func main() {
 
 	// --- Rotas ---
 	mux := http.NewServeMux()
-	routes.Register(mux)
+	routes.Register(mux, cfg)
 
 	// --- Servidor com CORS ---
 	handler := corsMiddleware(mux)
