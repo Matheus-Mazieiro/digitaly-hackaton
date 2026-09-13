@@ -4,6 +4,10 @@ import (
 	"context"
 	"log"
 	"net/http"
+	"os"
+
+	"github.com/jackc/pgx/v5/pgxpool"
+
 
 	"github.com/jackc/pgx/v5/pgxpool"
 
@@ -14,6 +18,14 @@ import (
 
 func main() {
 	ctx := context.Background()
+
+	// --- Banco de dados ---
+	connString := os.Getenv("DATABASE_URL")
+	if connString == "" {
+		connString = "postgres://digitaly:digitaly@localhost:5432/digitaly"
+	}
+
+	pool, err := pgxpool.New(ctx, connString)
 	cfg := config.Load()
 
 	pool, err := pgxpool.New(ctx, cfg.DatabaseURL)
@@ -27,6 +39,38 @@ func main() {
 	}
 	repositories.Init(pool)
 
+	// --- Aviso se a chave OpenAI não estiver configurada ---
+	if os.Getenv("API_TOKEN") == "" {
+		log.Println("AVISO: API_TOKEN não está definido — endpoints de IA vão falhar")
+	}
+
+	// --- Porta ---
+	port := os.Getenv("PORT")
+	if port == "" {
+		port = "8085"
+	}
+
+	// --- Rotas ---
+	mux := http.NewServeMux()
+	routes.Register(mux)
+
+	// --- Servidor com CORS ---
+	handler := corsMiddleware(mux)
+
+	log.Printf("Server running on :%s", port)
+	log.Fatal(http.ListenAndServe(":"+port, handler))
+}
+
+// corsMiddleware libera o frontend (Vite em :5173) de chamar o backend.
+// Em produção, troque "*" pelo domínio real.
+func corsMiddleware(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Access-Control-Allow-Origin", "*")
+		w.Header().Set("Access-Control-Allow-Methods", "GET, POST, PUT, PATCH, DELETE, OPTIONS")
+		w.Header().Set("Access-Control-Allow-Headers", "Content-Type, Authorization, X-Requested-With")
+		w.Header().Set("Access-Control-Max-Age", "86400")
+
+		// Preflight do browser
 	mux := http.NewServeMux()
 	routes.Register(mux)
 

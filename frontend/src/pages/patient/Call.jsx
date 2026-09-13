@@ -6,20 +6,17 @@ import { Avatar } from '../../components/Shared';
 import Modal from '../../components/Modal';
 import { initials } from '../../lib/utils';
 import { useCall } from '../../hooks/useCall';
+import { useRecorder } from '../../hooks/useRecorder';
+import { aiApi } from '../../lib/aiApi';
 
 export default function PatientCall() {
   const navigate = useNavigate();
   const [params] = useSearchParams();
   const {
-    apptById,
-    nextPatientAppt,
-    doctorById,
-    patientName,
-    patchAppointment,
-    pushNotification,
+    apptById, nextPatientAppt, doctorById, patientName,
+    patchAppointment, pushNotification,
   } = useApp();
 
-  // Resolve a consulta prioritariamente pelo room da URL
   const roomParam = params.get('room');
   const a = roomParam ? apptById(Number(roomParam)) : nextPatientAppt();
 
@@ -29,81 +26,85 @@ export default function PatientCall() {
 
   const [confirmEnd, setConfirmEnd] = useState(false);
   const [seconds, setSeconds] = useState(0);
+  const [summarizing, setSummarizing] = useState(false);
+  const [summaryError, setSummaryError] = useState(null);
 
   const roomId = roomParam || (a ? String(a.id) : '');
+  const apptId = a?.id;
 
-  // se não há sala válida, volta pra lista
   useEffect(() => {
-    if (!roomId) {
-      navigate('/patient/appointments', { replace: true });
-    }
+    if (!roomId) navigate('/patient/appointments', { replace: true });
   }, [roomId, navigate]);
 
   const {
-    localVideoRef,
-    remoteVideoRef,
-    status,
-    error,
-    peerPresent,
-    remoteActive,
-    remoteAudioBlocked,
-    unlockRemoteAudio,
-    micOn,
-    camOn,
-    toggleMic,
-    toggleCam,
-    end,
+    localVideoRef, remoteVideoRef,
+    status, error, peerPresent, remoteActive,
+    remoteAudioBlocked, unlockRemoteAudio,
+    micOn, camOn, toggleMic, toggleCam, end,
+    localStream, remoteStream,
   } = useCall({ roomId, role: 'patient' });
+
+  // grava do lado do paciente (para ter redundância de áudio)
+  const { recording, uploading, uploadedFile, stop: stopRecorder } = useRecorder({
+    localStream,
+    remoteStream,
+    apptId,
+    role: 'patient',
+    enabled: !!localStream && !!remoteStream && remoteActive,
+  });
 
   useEffect(() => {
     const t = setInterval(() => setSeconds((s) => s + 1), 1000);
     return () => clearInterval(t);
   }, []);
 
-  const finish = () => {
-    end();
-    if (a) {
-      patchAppointment(a.id, {
-        status: 'concluida',
-        hasSummary: true,
-        hasReport: true,
-        reviewed: false,
-        summary: {
-          motivo: 'Dor de cabeça recorrente relatada nas últimas semanas.',
-          pontos:
-            'Paciente relatou episódios quase diários, predominantemente à tarde, sem alterações visuais.',
-          orientacoes:
-            'Ajustar rotina de sono, manter boa hidratação e reduzir exposição a telas antes de dormir.',
-          proximos: 'Reavaliação em 30 dias caso os sintomas persistam.',
-        },
-        documents: [
-          { name: 'Receita — Analgésico', type: 'Receita', from: 'Médico' },
-        ],
+  const finish = async () => {
+    stopRecorder();
+    setSummarizing(true);
+    setSummaryError(null);
+
+    try {
+      // chama o backend para gerar o resumo (o backend já terá a transcrição do médico via WS no futuro;
+      // por agora, salvamos um resumo padrão)
+      const summary = await aiApi.summary([], {
+        patientName: selfName,
+        reason: a?.reason || 'Consulta',
       });
-      pushNotification(
-        'Sua consulta foi concluída. O resumo já está disponível.',
-        'report',
-      );
-      navigate(`/patient/appointments/${a.id}`);
-    } else {
-      navigate('/patient/appointments');
+
+      if (apptId) {
+        patchAppointment(apptId, {
+          status: 'concluida',
+          hasSummary: true,
+          hasReport: true,
+          reviewed: false,
+          summary,
+          documents: [
+            { name: 'Receita — Analgésico', type: 'Receita', from: 'Médico' },
+          ],
+          recording: uploadedFile || null,
+        });
+        pushNotification('Sua consulta foi concluída. O resumo já está disponível.', 'report');
+      }
+      end();
+      navigate(`/patient/appointments/${apptId}`);
+    } catch (err) {
+      setSummaryError(err);
+    } finally {
+      setSummarizing(false);
     }
   };
 
   const mm = String(Math.floor(seconds / 60)).padStart(2, '0');
   const ss = String(seconds % 60).padStart(2, '0');
 
-  const statusLabel =
-    {
-      idle: 'Preparando a sala...',
-      'requesting-media': 'Pedindo acesso à câmera e microfone...',
-      connecting: peerPresent
-        ? 'Conectando com o outro participante...'
-        : 'Aguardando o outro participante entrar...',
-      connected: 'Conectado',
-      failed: 'Falha na conexão',
-      ended: 'Chamada encerrada',
-    }[status] || status;
+  const statusLabel = {
+    idle: 'Preparando a sala...',
+    'requesting-media': 'Pedindo acesso à câmera e microfone...',
+    connecting: peerPresent ? 'Conectando com o outro participante...' : 'Aguardando o outro participante entrar...',
+    connected: 'Conectado',
+    failed: 'Falha na conexão',
+    ended: 'Chamada encerrada',
+  }[status] || status;
 
   if (!roomId) return null;
 
@@ -122,12 +123,7 @@ export default function PatientCall() {
           {remoteActive && remoteAudioBlocked && (
             <button
               className="btn btn-primary btn-sm glass"
-              style={{
-                position: 'absolute',
-                bottom: 16,
-                left: '50%',
-                transform: 'translateX(-50%)',
-              }}
+              style={{ position: 'absolute', bottom: 16, left: '50%', transform: 'translateX(-50%)' }}
               onClick={unlockRemoteAudio}
             >
               <Icon name="mic" size={14} /> Ativar som
@@ -136,9 +132,7 @@ export default function PatientCall() {
 
           {!remoteActive && (
             <div className="video-stage-fallback">
-              <div className="avatar big-avatar speaking-ring">
-                {initials(otherName)}
-              </div>
+              <div className="avatar big-avatar speaking-ring">{initials(otherName)}</div>
               <div className="call-status glass">{statusLabel}</div>
               {error && (
                 <div className="call-error" style={{ maxWidth: 380 }}>
@@ -155,15 +149,23 @@ export default function PatientCall() {
 
           <div className="call-topinfo glass">
             <Avatar name={otherName} size={22} fontSize={10} />
-            <span className="small" style={{ fontWeight: 500 }}>
-              {otherName}
-            </span>
+            <span className="small" style={{ fontWeight: 500 }}>{otherName}</span>
           </div>
 
           <div className="call-room-badge glass num">Sala #{roomId}</div>
 
-          <div className="call-timer glass num">
-            {mm}:{ss}
+          <div className="call-timer glass num">{mm}:{ss}</div>
+
+          <div style={{ position: 'absolute', top: 60, left: 16, display: 'flex', gap: 8 }}>
+            {recording && (
+              <span className="badge badge-error">
+                <span style={{
+                  width: 6, height: 6, borderRadius: '50%', background: 'var(--error)',
+                  display: 'inline-block', animation: 'pulse 1.2s infinite',
+                }} /> Gravando
+              </span>
+            )}
+            {uploadedFile && <span className="badge badge-success"><Icon name="check" size={11} /> Áudio salvo</span>}
           </div>
 
           <div className="video-thumb">
@@ -176,55 +178,44 @@ export default function PatientCall() {
               style={{ display: camOn ? 'block' : 'none' }}
             />
             {!camOn && (
-              <div className="video-thumb-off">
-                <Avatar name={selfName} size={44} />
-              </div>
+              <div className="video-thumb-off"><Avatar name={selfName} size={44} /></div>
             )}
           </div>
         </div>
 
         <div className="call-controls glass" style={{ alignSelf: 'center' }}>
-          <button
-            className={`ctrl-btn ${micOn ? '' : 'off'}`}
-            onClick={toggleMic}
-            title={micOn ? 'Mutar microfone' : 'Ativar microfone'}
-          >
+          <button className={`ctrl-btn ${micOn ? '' : 'off'}`} onClick={toggleMic}>
             <Icon name={micOn ? 'mic' : 'micOff'} />
           </button>
-          <button
-            className={`ctrl-btn ${camOn ? '' : 'off'}`}
-            onClick={toggleCam}
-            title={camOn ? 'Desligar câmera' : 'Ligar câmera'}
-          >
+          <button className={`ctrl-btn ${camOn ? '' : 'off'}`} onClick={toggleCam}>
             <Icon name={camOn ? 'video' : 'camOff'} />
           </button>
-          <button
-            className="ctrl-btn end"
-            onClick={() => setConfirmEnd(true)}
-            title="Encerrar consulta"
-          >
+          <button className="ctrl-btn end" onClick={() => setConfirmEnd(true)}>
             <Icon name="phoneOff" />
           </button>
         </div>
       </div>
 
       {confirmEnd && (
-        <Modal onClose={() => setConfirmEnd(false)}>
+        <Modal onClose={() => !summarizing && setConfirmEnd(false)}>
           <div style={{ fontWeight: 500, fontSize: 16, marginBottom: 8 }}>
-            Encerrar consulta?
+            {summarizing ? 'Encerrando…' : 'Encerrar consulta?'}
           </div>
           <div className="small muted" style={{ marginBottom: 20 }}>
-            Isso finalizará o atendimento.
+            {summarizing ? 'Aguarde enquanto salvamos a consulta.' : 'Isso finalizará o atendimento.'}
           </div>
+          {summaryError && (
+            <div className="call-error" style={{ marginBottom: 16 }}>
+              <Icon name="alert" size={16} />
+              <span>{summaryError.message}</span>
+            </div>
+          )}
           <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end' }}>
-            <button
-              className="btn btn-secondary btn-sm"
-              onClick={() => setConfirmEnd(false)}
-            >
+            <button className="btn btn-secondary btn-sm" disabled={summarizing} onClick={() => setConfirmEnd(false)}>
               Cancelar
             </button>
-            <button className="btn btn-danger btn-sm" onClick={finish}>
-              Encerrar consulta
+            <button className="btn btn-danger btn-sm" disabled={summarizing} onClick={finish}>
+              {summarizing ? 'Aguarde…' : 'Encerrar consulta'}
             </button>
           </div>
         </Modal>
