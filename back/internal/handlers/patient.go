@@ -4,24 +4,24 @@ import (
 	"encoding/json"
 	"net/http"
 
-	"backend/internal/models"
-	"backend/internal/services"
+	"github.com/matheus-mazieiro/digitaly-hackaton/internal/model/patient"
+	"github.com/matheus-mazieiro/digitaly-hackaton/internal/services"
 )
 
 func GetPatients(w http.ResponseWriter, r *http.Request) {
-	query := r.URL.Query()
+	q := r.URL.Query()
 
-	filter := models.PatientFilter{
-		ID:         query.Get("id"),
-		Nome:       query.Get("nome"),
-		Email:      query.Get("email"),
-		Telefone:   query.Get("telefone"),
-		Nascimento: query.Get("nascimento"),
-		CPF:        query.Get("cpf"),
-		Senha:      query.Get("senha"),
+	filter := patient.PatientFilter{
+		ID:         q.Get("id"),
+		Nome:       q.Get("nome"),
+		Email:      q.Get("email"),
+		Telefone:   q.Get("telefone"),
+		Nascimento: q.Get("nascimento"),
+		CPF:        q.Get("cpf"),
+		Senha:      q.Get("senha"),
 	}
 
-	patients, err := services.GetPatients(filter)
+	patients, err := services.GetPatients(r.Context(), filter)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return

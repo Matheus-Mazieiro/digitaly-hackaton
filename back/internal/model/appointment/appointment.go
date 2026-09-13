@@ -21,9 +21,9 @@ type AppointmentFilter struct {
 	Medico     string `json:"medico"`
 	Hora       string `json:"hora"`
 	Status     string `json:"status"`
+	Motivo     string `json:"motivo"`
 	Prontuario string `json:"prontuario"`
 	Resumo     string `json:"resumo"`
 	Receita    string `json:"receita"`
 	Link       string `json:"link"`
-	Reason     string `json:"reason"`
 }

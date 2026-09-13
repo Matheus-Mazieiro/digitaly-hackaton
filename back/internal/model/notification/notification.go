@@ -12,8 +12,10 @@ type Notification struct {
 }
 
 type NotificationFilter struct {
-	ID   string    `json:"id"`
-	Msg  string    `json:"msg"`
-	Data time.Time `json:"data"`
-	Usr  string    `json:"usr"`
+	ID   string `json:"id"`
+	Msg  string `json:"msg"`
+	Data string `json:"data"`
+	Usr  string `json:"usr"`
+	Tipo string `json:"tipo"`
+	Lida string `json:"lida"`
 }

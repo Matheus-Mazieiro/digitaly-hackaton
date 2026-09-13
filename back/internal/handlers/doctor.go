@@ -4,28 +4,29 @@ import (
 	"encoding/json"
 	"net/http"
 
-	"backend/internal/services"
+	"github.com/matheus-mazieiro/digitaly-hackaton/internal/model/doctor"
+	"github.com/matheus-mazieiro/digitaly-hackaton/internal/services"
 )
 
 func GetDoctors(w http.ResponseWriter, r *http.Request) {
-	query := r.URL.Query()
+	q := r.URL.Query()
 
-	filter := models.DoctorFilter{
-		ID:            query.Get("id"),
-		Nome:          query.Get("nome"),
-		Email:         query.Get("email"),
-		Telefone:      query.Get("telefone"),
-		Nascimento:    query.Get("nascimento"),
-		CPF:           query.Get("cpf"),
-		CRM:           query.Get("crm"),
-		Biografia:     query.Get("biografia"),
-		AvaliacaoSoma: query.Get("avaliacao_soma"),
-		NConsultas:    query.Get("n_consultas"),
-		Especialidade: query.Get("especialidade"),
-		Senha:         query.Get("senha"),
+	filter := doctor.DoctorFilter{
+		ID:            q.Get("id"),
+		Nome:          q.Get("nome"),
+		Email:         q.Get("email"),
+		Telefone:      q.Get("telefone"),
+		Nascimento:    q.Get("nascimento"),
+		CPF:           q.Get("cpf"),
+		CRM:           q.Get("crm"),
+		Biografia:     q.Get("biografia"),
+		AvaliacaoSoma: q.Get("avaliacao_soma"),
+		NConsultas:    q.Get("n_consultas"),
+		Especialidade: q.Get("especialidade"),
+		Senha:         q.Get("senha"),
 	}
 
-	doctors, err := services.GetDoctors(filter)
+	doctors, err := services.GetDoctors(r.Context(), filter)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
