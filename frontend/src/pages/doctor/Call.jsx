@@ -76,6 +76,8 @@ export default function DoctorCall() {
     error,
     peerPresent,
     remoteActive,
+    remoteAudioBlocked,
+    unlockRemoteAudio,
     micOn,
     camOn,
     toggleMic,
@@ -141,16 +143,17 @@ export default function DoctorCall() {
   const mm = String(Math.floor(seconds / 60)).padStart(2, '0');
   const ss = String(seconds % 60).padStart(2, '0');
 
-  const statusLabel = {
-    idle: 'Preparando a sala...',
-    'requesting-media': 'Pedindo acesso à câmera e microfone...',
-    connecting: peerPresent
-      ? 'Conectando com o paciente...'
-      : 'Aguardando o paciente entrar...',
-    connected: 'Conectado',
-    failed: 'Falha na conexão',
-    ended: 'Chamada encerrada',
-  }[status] || status;
+  const statusLabel =
+    {
+      idle: 'Preparando a sala...',
+      'requesting-media': 'Pedindo acesso à câmera e microfone...',
+      connecting: peerPresent
+        ? 'Conectando com o paciente...'
+        : 'Aguardando o paciente entrar...',
+      connected: 'Conectado',
+      failed: 'Falha na conexão',
+      ended: 'Chamada encerrada',
+    }[status] || status;
 
   if (!roomId) return null;
 
@@ -165,6 +168,21 @@ export default function DoctorCall() {
             className="remote-video"
             style={{ display: remoteActive ? 'block' : 'none' }}
           />
+
+          {remoteActive && remoteAudioBlocked && (
+            <button
+              className="btn btn-primary btn-sm glass"
+              style={{
+                position: 'absolute',
+                bottom: 16,
+                left: '50%',
+                transform: 'translateX(-50%)',
+              }}
+              onClick={unlockRemoteAudio}
+            >
+              <Icon name="mic" size={14} /> Ativar som
+            </button>
+          )}
 
           {!remoteActive && (
             <div className="video-stage-fallback">
@@ -230,15 +248,6 @@ export default function DoctorCall() {
           >
             <Icon name={camOn ? 'video' : 'camOff'} />
           </button>
-          <button className="ctrl-btn" title="Compartilhar tela (a implementar)">
-            <Icon name="screen" />
-          </button>
-          <button className="ctrl-btn" title="Enviar arquivo">
-            <Icon name="paperclip" />
-          </button>
-          <button className="ctrl-btn" title="Chat (a implementar)">
-            <Icon name="msg" />
-          </button>
           <button
             className="ctrl-btn end"
             onClick={() => setConfirmEnd(true)}
@@ -258,39 +267,43 @@ export default function DoctorCall() {
         </div>
         <div className="copilot-tabs">
           <button
-            className={`copilot-tab ${copilotTab === 'transcript' ? 'active' : ''}`}
+            className={`copilot-tab ${
+              copilotTab === 'transcript' ? 'active' : ''
+            }`}
             onClick={() => setCopilotTab('transcript')}
           >
             Transcrição
           </button>
           <button
-            className={`copilot-tab ${copilotTab === 'insights' ? 'active' : ''}`}
+            className={`copilot-tab ${
+              copilotTab === 'insights' ? 'active' : ''
+            }`}
             onClick={() => setCopilotTab('insights')}
           >
             Insights
           </button>
         </div>
         <div className="copilot-body">
-          {copilotTab === 'transcript'
-            ? transcript.length
-              ? transcript.map((t, i) => (
-                  <div key={i} className="transcript-line">
-                    <span className="who">{t.who}</span>
-                    {t.text}
-                  </div>
-                ))
-              : (
-                  <div className="small muted">
-                    A transcrição aparecerá aqui conforme a consulta avança.
-                  </div>
-                )
-            : insights.length
-              ? insights.map((i, k) => <InsightCard key={k} i={i} />)
-              : (
-                  <div className="small muted">
-                    Os insights de apoio aparecerão aqui conforme a consulta avança.
-                  </div>
-                )}
+          {copilotTab === 'transcript' ? (
+            transcript.length ? (
+              transcript.map((t, i) => (
+                <div key={i} className="transcript-line">
+                  <span className="who">{t.who}</span>
+                  {t.text}
+                </div>
+              ))
+            ) : (
+              <div className="small muted">
+                A transcrição aparecerá aqui conforme a consulta avança.
+              </div>
+            )
+          ) : insights.length ? (
+            insights.map((i, k) => <InsightCard key={k} i={i} />)
+          ) : (
+            <div className="small muted">
+              Os insights de apoio aparecerão aqui conforme a consulta avança.
+            </div>
+          )}
         </div>
         <div
           style={{ padding: '10px 18px', borderTop: '1px solid var(--borda)' }}

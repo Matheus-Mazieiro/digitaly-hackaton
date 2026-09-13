@@ -26,6 +26,7 @@ export function useCall({ roomId, role }) {
   const [error, setError] = useState(null);
   const [peerPresent, setPeerPresent] = useState(false);
   const [remoteActive, setRemoteActive] = useState(false);
+  const [remoteAudioBlocked, setRemoteAudioBlocked] = useState(false);
   const [micOn, setMicOn] = useState(true);
   const [camOn, setCamOn] = useState(true);
 
@@ -82,6 +83,34 @@ export function useCall({ roomId, role }) {
       remoteStreamRef.current = remoteStream;
       if (remoteVideoRef.current) remoteVideoRef.current.srcObject = remoteStream;
 
+      // ===== CORREÇÃO: autoplay do vídeo remoto =====
+      // <video> remoto tem áudio, então autoplay depende de o navegador
+      // já ter registrado interação do usuário nessa aba/origem. Se a
+      // aba foi aberta direto por URL (sem clique dentro do app), o
+      // play() com som é bloqueado silenciosamente e o vídeo fica
+      // congelado mesmo com a conexão 100% funcional. Por isso:
+      // 1) tenta tocar com som;
+      // 2) se falhar, toca mudo (sempre permitido) e sinaliza pra UI
+      //    mostrar um botão "ativar som" — um clique nele destrava.
+      async function playRemote() {
+        const el = remoteVideoRef.current;
+        if (!el) return;
+        try {
+          el.muted = false;
+          await el.play();
+          setRemoteAudioBlocked(false);
+        } catch (err) {
+          console.warn('[call] autoplay com som bloqueado, tocando mudo', err);
+          try {
+            el.muted = true;
+            await el.play();
+          } catch (err2) {
+            console.warn('[call] play() falhou mesmo mudo', err2);
+          }
+          setRemoteAudioBlocked(true);
+        }
+      }
+
       pc.ontrack = (ev) => {
         const incoming = ev.streams?.length
           ? ev.streams
@@ -94,6 +123,7 @@ export function useCall({ roomId, role }) {
           });
         });
         setRemoteActive(true);
+        playRemote();
       };
 
       pc.onconnectionstatechange = () => {
@@ -114,12 +144,15 @@ export function useCall({ roomId, role }) {
       const signaling = createSignaling({ room: roomId, role });
       signalingRef.current = signaling;
 
-      // ===== CORREÇÃO CHAVE =====
-      // Sempre enviamos as candidates locais, imediatamente.
-      // O lado que receber empilha se ainda não tiver remote description.
+      // ===== CORREÇÃO =====
+      // RTCIceCandidate/RTCSessionDescription são instâncias nativas do
+      // navegador — o structured clone do BroadcastChannel (usado no
+      // postMessage) não sabe cloná-las e lança DataCloneError, o que
+      // derrubava o envio de forma silenciosa. Por isso serializamos pra
+      // objeto simples (candidate.toJSON()) antes de mandar.
       pc.onicecandidate = ({ candidate }) => {
         if (!candidate) return;
-        signaling.send({ type: 'candidate', candidate });
+        signaling.send({ type: 'candidate', candidate: candidate.toJSON() });
         setDebug((d) => ({ ...d, sent: d.sent + 1 }));
       };
 
@@ -152,7 +185,10 @@ export function useCall({ roomId, role }) {
               await pc.setLocalDescription(offer);
               signaling.send({
                 type: 'description',
-                description: pc.localDescription,
+                description: {
+                  type: pc.localDescription.type,
+                  sdp: pc.localDescription.sdp,
+                },
               });
               console.log('[call] >> offer');
             }
@@ -174,7 +210,10 @@ export function useCall({ roomId, role }) {
               await pc.setLocalDescription(answer);
               signaling.send({
                 type: 'description',
-                description: pc.localDescription,
+                description: {
+                  type: pc.localDescription.type,
+                  sdp: pc.localDescription.sdp,
+                },
               });
               console.log('[call] >> answer');
             } else if (msg.description.type === 'answer') {
@@ -244,6 +283,18 @@ export function useCall({ roomId, role }) {
     setStatus('ended');
   };
 
+  const unlockRemoteAudio = async () => {
+    const el = remoteVideoRef.current;
+    if (!el) return;
+    try {
+      el.muted = false;
+      await el.play();
+      setRemoteAudioBlocked(false);
+    } catch (err) {
+      console.warn('[call] ainda não foi possível ativar o som', err);
+    }
+  };
+
   return {
     localVideoRef,
     remoteVideoRef,
@@ -251,6 +302,8 @@ export function useCall({ roomId, role }) {
     error,
     peerPresent,
     remoteActive,
+    remoteAudioBlocked,
+    unlockRemoteAudio,
     micOn,
     camOn,
     toggleMic,
