@@ -39,6 +39,8 @@ fi
 echo ">> Schema aplicado (001_schema.sql)"
 "$PSQL" -d "$DB_NAME" -f "$MIGRATIONS_DIR/002_seed.sql" >/dev/null
 echo ">> Seed aplicado (002_seed.sql)"
+"$PSQL" -d "$DB_NAME" -f "$MIGRATIONS_DIR/003_verificacoes.sql" >/dev/null
+echo ">> Migração aplicada (003_verificacoes.sql)"
 
 echo
 echo "OK! Banco '$DB_NAME' pronto."

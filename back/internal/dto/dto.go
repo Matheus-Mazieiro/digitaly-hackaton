@@ -61,3 +61,11 @@ type Notification struct {
 	Time string `json:"time"`
 	Read bool   `json:"read"`
 }
+
+// Me é o perfil do usuário autenticado (GET /api/auth/me).
+type Me struct {
+	ID    string `json:"id"`
+	Nome  string `json:"nome"`
+	Email string `json:"email"`
+	Role  string `json:"role"`
+}
