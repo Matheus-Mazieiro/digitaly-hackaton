@@ -1,31 +1,28 @@
 package handlers
 
 import (
-	"encoding/json"
 	"net/http"
 
-	"github.com/matheus-mazieiro/digitaly-hackaton/internal/model/notification"
+	"github.com/matheus-mazieiro/digitaly-hackaton/internal/auth"
 	"github.com/matheus-mazieiro/digitaly-hackaton/internal/services"
 )
 
+// GetNotifications lista as notificações do usuário logado.
 func GetNotifications(w http.ResponseWriter, r *http.Request) {
-	q := r.URL.Query()
-
-	filter := notification.NotificationFilter{
-		ID:   q.Get("id"),
-		Msg:  q.Get("text"),
-		Data: q.Get("date"),
-		Usr:  q.Get("userId"),
-		Tipo: q.Get("type"),
-		Lida: q.Get("read"),
-	}
-
-	notifications, err := services.GetNotifications(r.Context(), filter)
+	list, err := services.ListNotificationsByUser(r.Context(), auth.UserID(r.Context()))
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		writeErr(w, err)
 		return
 	}
+	writeJSON(w, http.StatusOK, list)
+}
 
-	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(notifications)
+// MarkNotificationRead marca uma notificação do usuário como lida.
+func MarkNotificationRead(w http.ResponseWriter, r *http.Request) {
+	id := r.PathValue("id")
+	if err := services.MarkNotificationRead(r.Context(), auth.UserID(r.Context()), id); err != nil {
+		writeErr(w, err)
+		return
+	}
+	writeJSON(w, http.StatusOK, map[string]bool{"ok": true})
 }

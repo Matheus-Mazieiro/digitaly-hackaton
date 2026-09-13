@@ -275,14 +275,33 @@ func (s *AuthService) MeProfile(ctx context.Context) (dto.Me, error) {
 		if err != nil {
 			return dto.Me{}, err
 		}
-		return dto.Me{ID: d.ID, Nome: d.Nome, Email: d.Email, Role: "doctor"}, nil
+		crm, uf := d.CRM, ""
+		if i := strings.Index(d.CRM, " "); i >= 0 {
+			uf, crm = d.CRM[:i], strings.TrimSpace(d.CRM[i+1:])
+		}
+		return dto.Me{
+			ID: d.ID, Nome: d.Nome, Email: d.Email, Role: "doctor",
+			Telefone: d.Telefone, Nascimento: d.Nascimento.Format("2006-01-02"), CPF: d.CPF,
+			CRM: crm, CRMState: uf, Especialidade: d.Especialidade, Biografia: d.Biografia,
+		}, nil
 	case "patient":
 		p, err := repositories.GetPatientByID(ctx, id)
 		if err != nil {
 			return dto.Me{}, err
 		}
-		return dto.Me{ID: p.ID, Nome: p.Nome, Email: p.Email, Role: "patient"}, nil
+		return dto.Me{
+			ID: p.ID, Nome: p.Nome, Email: p.Email, Role: "patient",
+			Telefone: p.Telefone, Nascimento: p.Nascimento.Format("2006-01-02"), CPF: p.CPF,
+		}, nil
 	default:
 		return dto.Me{}, fmt.Errorf("%w: role desconhecida", ErrUnauthorized)
 	}
+}
+
+// sendCode envia um código por e-mail usando o mailer configurado (ou log fallback).
+func sendCode(to, code string) error {
+	if authSvc == nil || authSvc.mailer == nil {
+		return errors.New("auth não inicializado")
+	}
+	return authSvc.mailer.SendCode(to, code)
 }

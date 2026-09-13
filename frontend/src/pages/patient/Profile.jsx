@@ -5,7 +5,7 @@ import { Avatar } from '../../components/Shared';
 
 export default function Profile() {
   const navigate = useNavigate();
-  const { patientName, logout } = useApp();
+  const { user, logout } = useApp();
 
   const onLogout = () => {
     logout();
@@ -18,16 +18,16 @@ export default function Profile() {
       <div className="grid-2">
         <div className="card">
           <div className="flex-center" style={{ marginBottom: 18 }}>
-            <Avatar name={patientName} size={52} />
+            <Avatar name={user?.nome || ''} size={52} />
             <div>
-              <div style={{ fontWeight: 600 }}>{patientName}</div>
+              <div style={{ fontWeight: 600 }}>{user?.nome || ''}</div>
               <div className="small muted">Paciente</div>
             </div>
           </div>
-          <div className="field"><label>Nome</label><input className="input" defaultValue={patientName} /></div>
-          <div className="field"><label>E-mail</label><input className="input" defaultValue="nathalia@email.com" /></div>
-          <div className="field"><label>Telefone</label><input className="input" defaultValue="(16) 99999-0000" /></div>
-          <div className="field"><label>Data de nascimento</label><input className="input" type="date" defaultValue="1999-04-12" /></div>
+          <div className="field"><label>Nome</label><input className="input" defaultValue={user?.nome || ''} /></div>
+          <div className="field"><label>E-mail</label><input className="input" defaultValue={user?.email || ''} /></div>
+          <div className="field"><label>Telefone</label><input className="input" defaultValue={user?.telefone || ''} /></div>
+          <div className="field"><label>Data de nascimento</label><input className="input" type="date" defaultValue={user?.nascimento || ''} /></div>
           <button className="btn btn-secondary btn-sm">Alterar senha</button>
         </div>
         <div className="card">

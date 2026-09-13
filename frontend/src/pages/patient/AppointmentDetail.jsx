@@ -1,99 +1,52 @@
+import { useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useApp } from '../../context/AppContext';
-import { useToast } from '../../context/ToastContext';
 import { Icon } from '../../lib/icons';
 import { Avatar, StatusBadge, BackButton } from '../../components/Shared';
 import { fmtDateFullLong } from '../../lib/utils';
-import { appointmentAccessInfo, humanizeTimeUntil, fmtHM } from '../../lib/mock';
+import { api } from '../../lib/api';
 
 export default function AppointmentDetail() {
   const navigate = useNavigate();
   const { id } = useParams();
-  const { apptById, doctorById, specialtyById, patchAppointment } = useApp();
-  const { toast } = useToast();
+  const { doctorById, specialtyById } = useApp();
+  const [a, setA] = useState(null);
+  const [loading, setLoading] = useState(true);
 
-  const a = apptById(Number(id));
-  if (!a) return <div className="card">Consulta não encontrada.</div>;
+  useEffect(() => {
+    setLoading(true);
+    api.getAppointment(id).then(setA).catch(console.warn).finally(() => setLoading(false));
+  }, [id]);
+
+  if (loading) return <div className="card" style={{ marginTop: 20 }}>Carregando...</div>;
+  if (!a) return <div className="card" style={{ marginTop: 20 }}>Consulta não encontrada.</div>;
 
   const doc = doctorById(a.doctorId);
-  const spec = specialtyById(doc.specialty);
-
-  const isFuture = ['agendada', 'confirmada', 'em_andamento'].includes(a.status);
+  const spec = doc ? specialtyById(doc.specialty) : null;
   const isPast = a.status === 'concluida';
-
-  const access = appointmentAccessInfo(a);
-  const canJoin = access.canJoin;
-
-  const patientDocs = a.patientDocuments || [];
-  const doctorDocs = a.documents || [];
-  const allDocs = [...doctorDocs, ...patientDocs];
-
-  const handlePatientUpload = () => {
-    const newDoc = {
-      name: 'Documento enviado pelo paciente',
-      type: 'Documento',
-      from: 'Paciente',
-      date: new Date().toISOString().slice(0, 10),
-    };
-    patchAppointment(a.id, (prev) => ({
-      patientDocuments: [...(prev.patientDocuments || []), newDoc],
-    }));
-    toast('Documento anexado à consulta.', 'upload', 'var(--success)');
-  };
+  const docs = a.documents || [];
 
   return (
     <>
       <BackButton onClick={() => navigate('/patient/appointments')} />
-
-      <h1 className="page-title" style={{ fontSize: 24 }}>
-        Detalhes da consulta
-      </h1>
+      <h1 className="page-title" style={{ fontSize: 24 }}>Detalhes da consulta</h1>
 
       <div className="card card-hero">
         <div className="flex-center">
-          <Avatar name={doc.name} size={52} />
+          <Avatar name={doc?.name || ''} size={52} />
           <div>
-            <div style={{ fontWeight: 500 }}>{doc.name}</div>
-            <div className="small muted">{spec.name}</div>
+            <div style={{ fontWeight: 500 }}>{doc?.name || 'Médico'}</div>
+            <div className="small muted">{spec?.name || ''}</div>
           </div>
         </div>
         <hr className="divider" />
         <div className="grid-2">
-          <div>
-            <div className="small muted">Data</div>
-            <div style={{ fontWeight: 500 }}>{fmtDateFullLong(a.date)}</div>
-          </div>
-          <div>
-            <div className="small muted">Horário</div>
-            <div className="num" style={{ fontWeight: 500 }}>{a.time}</div>
-          </div>
-          <div>
-            <div className="small muted">Status</div>
-            <StatusBadge status={a.status} />
-          </div>
-          <div>
-            <div className="small muted">Motivo</div>
-            <div style={{ fontWeight: 500 }}>{a.reason || '—'}</div>
-          </div>
+          <div><div className="small muted">Data</div><div style={{ fontWeight: 500 }}>{fmtDateFullLong(a.date)}</div></div>
+          <div><div className="small muted">Horário</div><div className="num" style={{ fontWeight: 500 }}>{a.time}</div></div>
+          <div><div className="small muted">Status</div><StatusBadge status={a.status} /></div>
+          <div><div className="small muted">Motivo</div><div style={{ fontWeight: 500 }}>{a.reason || '—'}</div></div>
         </div>
       </div>
-
-      {isFuture && (
-        <div style={{ display: 'flex', gap: 10, marginTop: 20, flexWrap: 'wrap', alignItems: 'center' }}>
-          {canJoin ? (
-            <button className="btn btn-primary" onClick={() => navigate('/patient/preroom')}>
-              <Icon name="video" /> Entrar na consulta
-            </button>
-          ) : (
-            <div className="card small muted" style={{ flex: 1, minWidth: 260 }}>
-              <Icon name="info" size={14} style={{ verticalAlign: -2, marginRight: 6 }} />
-              {access.reason === 'too_early' && access.opensAt
-                ? `A sala abre às ${fmtHM(access.opensAt)} (${humanizeTimeUntil(access.msUntil)}).`
-                : 'A sala será liberada próximo do horário da consulta.'}
-            </div>
-          )}
-        </div>
-      )}
 
       {isPast && a.hasSummary && a.summary && (
         <div className="card" style={{ marginTop: 20 }}>
@@ -101,95 +54,35 @@ export default function AppointmentDetail() {
             <Icon name="sparkle" size={12} /> Resumo gerado por IA
           </div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-            <div>
-              <div className="section-title">Motivo da consulta</div>
-              <div className="small" style={{ color: 'var(--texto-2)', lineHeight: 1.6 }}>
-                {a.summary.motivo}
-              </div>
-            </div>
-            <div>
-              <div className="section-title">Principais pontos discutidos</div>
-              <div className="small" style={{ color: 'var(--texto-2)', lineHeight: 1.6 }}>
-                {a.summary.pontos}
-              </div>
-            </div>
-            <div>
-              <div className="section-title">Orientações</div>
-              <div className="small" style={{ color: 'var(--texto-2)', lineHeight: 1.6 }}>
-                {a.summary.orientacoes}
-              </div>
-            </div>
-            <div>
-              <div className="section-title">Próximos passos</div>
-              <div className="small" style={{ color: 'var(--texto-2)', lineHeight: 1.6 }}>
-                {a.summary.proximos}
-              </div>
-            </div>
+            <div><div className="section-title">Motivo da consulta</div><div className="small" style={{ color: 'var(--texto-2)', lineHeight: 1.6 }}>{a.summary.motivo}</div></div>
+            <div><div className="section-title">Principais pontos discutidos</div><div className="small" style={{ color: 'var(--texto-2)', lineHeight: 1.6 }}>{a.summary.pontos}</div></div>
+            <div><div className="section-title">Orientações</div><div className="small" style={{ color: 'var(--texto-2)', lineHeight: 1.6 }}>{a.summary.orientacoes}</div></div>
+            <div><div className="section-title">Próximos passos</div><div className="small" style={{ color: 'var(--texto-2)', lineHeight: 1.6 }}>{a.summary.proximos}</div></div>
           </div>
         </div>
       )}
 
       <div style={{ marginTop: 24 }}>
-        <div className="row-between" style={{ marginBottom: 14, flexWrap: 'wrap', gap: 10 }}>
-          <div className="section-title" style={{ margin: 0 }}>Documentos e laudos</div>
-          <button className="btn btn-secondary btn-sm" onClick={handlePatientUpload}>
-            <Icon name="upload" size={14} /> Adicionar documento
-          </button>
-        </div>
-
+        <div className="section-title" style={{ marginBottom: 14 }}>Documentos e laudos</div>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-          {allDocs.map((d, i) => {
-            const fromPatient = d.from === 'Paciente';
-            return (
-              <div
-                key={i}
-                className="card row-between"
-                style={{
-                  borderLeft: `4px solid ${fromPatient ? 'var(--warning)' : 'var(--celeste-500)'}`,
-                  background: fromPatient ? 'rgba(245,158,11,0.05)' : 'rgba(0,159,255,0.05)',
-                  flexWrap: 'wrap', gap: 10,
-                }}
-              >
-                <div className="flex-center">
-                  <div
-                    style={{
-                      width: 36, height: 36, borderRadius: 10,
-                      background: fromPatient ? 'rgba(245,158,11,0.15)' : 'var(--celeste-500)',
-                      color: fromPatient ? '#FBBF24' : '#fff',
-                      display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    }}
-                  >
-                    <Icon name="file" size={18} />
-                  </div>
-                  <div>
-                    <div style={{ fontWeight: 500, fontSize: 13.5 }}>{d.name}</div>
-                    <div className="small muted">{d.type} · Enviado por {d.from}</div>
-                  </div>
+          {docs.map((d, i) => (
+            <div key={i} className="card row-between" style={{ flexWrap: 'wrap', gap: 10 }}>
+              <div className="flex-center">
+                <div style={{ width: 36, height: 36, borderRadius: 10, background: 'var(--celeste-500)', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  <Icon name="file" size={18} />
                 </div>
-                <button className="btn btn-secondary btn-sm">
-                  <Icon name="download" size={14} /> Baixar
-                </button>
+                <div>
+                  <div style={{ fontWeight: 500, fontSize: 13.5 }}>{d.name}</div>
+                  <div className="small muted">{d.type} · Enviado por {d.from}</div>
+                </div>
               </div>
-            );
-          })}
-
-          {!allDocs.length && (
-            <div className="card muted small" style={{ textAlign: 'center', padding: 20 }}>
-              {isFuture
-                ? 'Nenhum documento ainda. Você pode adicionar exames ou encaminhamentos antes da consulta.'
-                : 'Nenhum documento nesta consulta.'}
             </div>
+          ))}
+          {!docs.length && (
+            <div className="card muted small" style={{ textAlign: 'center', padding: 20 }}>Nenhum documento nesta consulta.</div>
           )}
         </div>
       </div>
-
-      {isPast && !a.reviewed && (
-        <div style={{ display: 'flex', gap: 10, marginTop: 20, flexWrap: 'wrap' }}>
-          <button className="btn btn-primary" onClick={() => navigate(`/patient/review/${a.id}`)}>
-            <Icon name="star" /> Avaliar médico
-          </button>
-        </div>
-      )}
     </>
   );
 }

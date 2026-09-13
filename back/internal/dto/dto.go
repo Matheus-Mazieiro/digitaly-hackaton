@@ -30,6 +30,7 @@ type Doctor struct {
 	Rating    float64 `json:"rating"`
 	Reviews   int     `json:"reviews"`
 	Bio       string  `json:"bio"`
+	Slots     []string `json:"slots"`
 }
 
 type Patient struct {
@@ -64,8 +65,15 @@ type Notification struct {
 
 // Me é o perfil do usuário autenticado (GET /api/auth/me).
 type Me struct {
-	ID    string `json:"id"`
-	Nome  string `json:"nome"`
-	Email string `json:"email"`
-	Role  string `json:"role"`
+	ID           string `json:"id"`
+	Nome         string `json:"nome"`
+	Email        string `json:"email"`
+	Role         string `json:"role"`
+	Telefone     string `json:"telefone,omitempty"`
+	Nascimento   string `json:"nascimento,omitempty"`
+	CPF          string `json:"cpf,omitempty"`
+	CRM          string `json:"crm,omitempty"`
+	CRMState     string `json:"crmState,omitempty"`
+	Especialidade string `json:"especialidade,omitempty"`
+	Biografia    string `json:"biografia,omitempty"`
 }
