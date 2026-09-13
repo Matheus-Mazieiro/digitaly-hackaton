@@ -9,7 +9,7 @@ type Patient struct {
 	Telefone   string    `json:"telefone"`
 	Nascimento time.Time `json:"nascimento"`
 	CPF        string    `json:"cpf"`
-	Senha      string    `json:"senha"`
+	Senha      string    `json:"-"`
 	Ativo      bool      `json:"ativo"`
 }
 

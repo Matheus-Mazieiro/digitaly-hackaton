@@ -13,11 +13,11 @@ func GetNotifications(w http.ResponseWriter, r *http.Request) {
 
 	filter := notification.NotificationFilter{
 		ID:   q.Get("id"),
-		Msg:  q.Get("msg"),
-		Data: q.Get("data"),
-		Usr:  q.Get("usr"),
-		Tipo: q.Get("tipo"),
-		Lida: q.Get("lida"),
+		Msg:  q.Get("text"),
+		Data: q.Get("date"),
+		Usr:  q.Get("userId"),
+		Tipo: q.Get("type"),
+		Lida: q.Get("read"),
 	}
 
 	notifications, err := services.GetNotifications(r.Context(), filter)

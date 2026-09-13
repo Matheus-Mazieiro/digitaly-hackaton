@@ -1,3 +1,15 @@
 # Rascunhos
-
 .draft/
+
+# Binários / build
+bin/
+*.exe
+*.test
+
+# Env
+.env
+.env.local
+
+# Node (frontend)
+frontend/node_modules/
+frontend/dist/
