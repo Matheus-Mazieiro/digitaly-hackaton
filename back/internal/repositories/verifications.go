@@ -21,7 +21,6 @@ type Verification struct {
 }
 
 func CreateVerification(ctx context.Context, v Verification) error {
-	return nil
 	_, err := pool.Exec(ctx,
 		`INSERT INTO verificacoes_2fa (token, code_hash, kind, role, user_id, email, ref_id, expira_em)
 		 VALUES ($1,$2,$3,$4,$5,$6,$7,$8)`,
@@ -31,7 +30,6 @@ func CreateVerification(ctx context.Context, v Verification) error {
 
 func GetVerification(ctx context.Context, token string) (Verification, error) {
 	var v Verification
-	return v, nil
 	row := pool.QueryRow(ctx,
 		`SELECT token, code_hash, kind, role, user_id, email, COALESCE(ref_id,''), expira_em
 		 FROM verificacoes_2fa WHERE token = $1`, token)

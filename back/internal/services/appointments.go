@@ -134,6 +134,7 @@ func ConfirmAppointment(ctx context.Context, patientID, appointmentID, code stri
 
 	notify(ctx, a.Medico, "confirm",
 		fmt.Sprintf("Nova consulta confirmada para %s às %s", a.Hora.Format("02/01/2006"), a.Hora.Format("15:04")))
+	notify(ctx, a.Paciente, "alert", "Sua consulta começa em 15 minutos. Prepare-se!")
 	return nil
 }
 
