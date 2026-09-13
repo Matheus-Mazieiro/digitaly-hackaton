@@ -10,6 +10,7 @@ import (
 	"github.com/matheus-mazieiro/digitaly-hackaton/internal/config"
 	"github.com/matheus-mazieiro/digitaly-hackaton/internal/repositories"
 	"github.com/matheus-mazieiro/digitaly-hackaton/internal/routes"
+	"github.com/matheus-mazieiro/digitaly-hackaton/internal/services"
 )
 
 func main() {
@@ -26,9 +27,10 @@ func main() {
 		log.Fatalf("erro ao conectar no PostgreSQL: %v", err)
 	}
 	repositories.Init(pool)
+	services.InitAuth(cfg)
 
 	mux := http.NewServeMux()
-	routes.Register(mux)
+	routes.Register(mux, cfg)
 
 	log.Printf("Server running on :%s", cfg.Port)
 	log.Fatal(http.ListenAndServe(":"+cfg.Port, cors(mux)))
