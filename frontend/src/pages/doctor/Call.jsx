@@ -30,7 +30,7 @@ export default function DoctorCall() {
 
   const roomParam = params.get('room');
   const a = roomParam
-    ? apptById(Number(roomParam))
+    ? apptById(roomParam)
     : activeApptId
       ? apptById(activeApptId)
       : nextPatientAppt();

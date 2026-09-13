@@ -11,7 +11,7 @@ export default function DoctorHistoryDetail() {
   const navigate = useNavigate();
   const { id } = useParams();
   const { apptById, patientName } = useApp();
-  const a = apptById(Number(id)) || apptById(1);
+  const a = apptById(id) || apptById(1);
   if (!a || !a.summary) return <div className="card">Resumo não encontrado.</div>;
 
   return (

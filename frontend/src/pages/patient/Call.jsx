@@ -18,7 +18,7 @@ export default function PatientCall() {
   } = useApp();
 
   const roomParam = params.get('room');
-  const a = roomParam ? apptById(Number(roomParam)) : nextPatientAppt();
+  const a = roomParam ? apptById(roomParam) : nextPatientAppt();
 
   const doc = a ? doctorById(a.doctorId) : null;
   const otherName = doc?.name || 'Médico(a)';

@@ -2,8 +2,7 @@ import { useNavigate } from 'react-router-dom';
 import { useApp } from '../../context/AppContext';
 import { Icon } from '../../lib/icons';
 import { Avatar, QuickAction, StatusBadge } from '../../components/Shared';
-import { fmtDateFullLong, dateKey } from '../../lib/utils';
-import { TODAY } from '../../lib/mock';
+import { api } from '../../lib/api';
 
 export default function DoctorDashboard() {
   const navigate = useNavigate();
@@ -18,18 +17,14 @@ export default function DoctorDashboard() {
   } = useApp();
 
   const doc = doctorById(doctorId);
-  const todayKey = dateKey(TODAY);
 
-  const todayAppts = appointments
-    .filter(
-      (a) =>
-        a.date === todayKey &&
-        ['agendada', 'confirmada', 'em_andamento'].includes(a.status),
-    )
-    .sort((a, b) => a.time.localeCompare(b.time));
+  const upcoming = appointments
+    .filter((a) => ['agendada', 'confirmada', 'em_andamento'].includes(a.status))
+    .sort((a, b) => `${a.date}${a.time}`.localeCompare(`${b.date}${b.time}`));
 
-  const startCall = (id) => {
+  const startCall = async (id) => {
     setActiveApptId(id);
+    try { await api.startAppointment(id); } catch (e) { console.warn('start', e); }
     patchAppointment(id, { status: 'em_andamento' });
     pushNotification('Seu médico entrou na sala.', 'started');
     navigate(`/doctor/call?room=${id}`);
@@ -39,13 +34,13 @@ export default function DoctorDashboard() {
     <>
       <h1 className="page-title">Olá, {doc.name}</h1>
       <div className="page-sub">
-        Suas consultas de hoje — {fmtDateFullLong(todayKey)}.
+        Suas próximas consultas — inicie a teleconsulta quando quiser.
       </div>
 
-      <div className="section-title">Consultas de hoje</div>
+      <div className="section-title">Próximas consultas</div>
 
       <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-        {todayAppts.map((a, idx) => (
+        {upcoming.map((a, idx) => (
           <div
             key={a.id}
             className={`card ${idx === 0 ? 'card-hero' : ''}`}
@@ -90,13 +85,13 @@ export default function DoctorDashboard() {
           </div>
         ))}
 
-        {!todayAppts.length && (
+        {!upcoming.length && (
           <div className="card" style={{ textAlign: 'center', padding: 40 }}>
             <div style={{ color: 'var(--texto-3)', marginBottom: 10 }}>
               <Icon name="calendar" size={30} />
             </div>
             <div style={{ fontWeight: 500, marginBottom: 4 }}>
-              Nenhuma consulta hoje
+              Nenhuma consulta agendada
             </div>
             <div className="small muted" style={{ marginBottom: 18 }}>
               Aproveite para revisar sua agenda das próximas semanas.

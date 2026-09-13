@@ -4,7 +4,6 @@ import { useApp } from '../../context/AppContext';
 import { Icon } from '../../lib/icons';
 import { Avatar, BackButton } from '../../components/Shared';
 import { fmtDateFull } from '../../lib/utils';
-import { appointmentAccessInfo, humanizeTimeUntil, fmtHM } from '../../lib/mock';
 import { acquireStream, releaseStream, peekStream } from '../../lib/media';
 
 export default function Preroom() {
@@ -80,31 +79,15 @@ export default function Preroom() {
 
   const doc = doctorById(a.doctorId);
   const spec = specialtyById(doc.specialty);
-  const access = appointmentAccessInfo(a);
-  const canEnter = access.canJoin;
+  const canEnter = ['agendada', 'confirmada', 'em_andamento'].includes(a.status);
 
-  let statusBadge;
-  if (access.reason === 'live') {
-    statusBadge = (
-      <span className="badge badge-success">
-        <Icon name="check" size={12} /> Sala aberta
-      </span>
-    );
-  } else if (access.reason === 'window') {
-    statusBadge = (
-      <span className="badge badge-success">
-        <Icon name="check" size={12} /> Sala liberada
-      </span>
-    );
-  } else if (access.reason === 'too_early') {
-    statusBadge = (
-      <span className="badge badge-warning">
-        <Icon name="clock" size={12} /> Abre às {fmtHM(access.opensAt)}
-      </span>
-    );
-  } else {
-    statusBadge = <span className="badge badge-neutral">Sala indisponível</span>;
-  }
+  const statusBadge = canEnter ? (
+    <span className="badge badge-success">
+      <Icon name="check" size={12} /> Sala liberada
+    </span>
+  ) : (
+    <span className="badge badge-neutral">Sala indisponível</span>
+  );
 
   const toggleMic = () => {
     const s = peekStream();
@@ -137,9 +120,7 @@ export default function Preroom() {
         Prepare-se para sua consulta
       </h1>
       <div className="page-sub">
-        {canEnter
-          ? 'Sua sala já está disponível. Revise câmera e microfone e entre quando quiser.'
-          : 'Você poderá entrar assim que a sala for liberada — abre 15 minutos antes do horário.'}
+        Sua sala já está disponível. Revise câmera e microfone e entre quando quiser.
       </div>
 
       <div className="card card-hero" style={{ padding: 0, overflow: 'hidden' }}>
@@ -199,28 +180,6 @@ export default function Preroom() {
               Solicitando acesso à câmera e microfone...
             </div>
           )}
-
-          {!canEnter && access.reason === 'too_early' && (
-            <div
-              className="glass"
-              style={{
-                position: 'absolute',
-                top: 16,
-                left: '50%',
-                transform: 'translateX(-50%)',
-                padding: '8px 16px',
-                borderRadius: 999,
-                fontSize: 12.5,
-              }}
-            >
-              <Icon
-                name="clock"
-                size={13}
-                style={{ verticalAlign: -2, marginRight: 6 }}
-              />
-              Falta {humanizeTimeUntil(access.msUntil)} para a consulta
-            </div>
-          )}
         </div>
 
         <div style={{ padding: 18 }}>
@@ -265,12 +224,6 @@ export default function Preroom() {
       >
         <Icon name="video" /> Entrar na consulta
       </button>
-
-      {!canEnter && access.reason === 'too_early' && (
-        <div className="small muted" style={{ marginTop: 10 }}>
-          A sala abre automaticamente às {fmtHM(access.opensAt)}.
-        </div>
-      )}
     </div>
   );
 }
