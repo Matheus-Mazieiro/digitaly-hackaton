@@ -48,12 +48,6 @@ export default function Review() {
             </button>
           ))}
         </div>
-        <textarea
-          className="input"
-          placeholder="Conte um pouco mais sobre sua experiência (opcional)"
-          value={text}
-          onChange={(e) => setText(e.target.value)}
-        />
         <button className="btn btn-primary btn-block" style={{ marginTop: 16 }} onClick={onSend}>
           Enviar avaliação
         </button>
