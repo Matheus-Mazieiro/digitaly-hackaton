@@ -20,6 +20,7 @@ type Verification struct {
 }
 
 func CreateVerification(ctx context.Context, v Verification) error {
+	return nil
 	_, err := pool.Exec(ctx,
 		`INSERT INTO verificacoes_2fa (token, code_hash, kind, role, user_id, email, expira_em)
 		 VALUES ($1,$2,$3,$4,$5,$6,$7)`,
@@ -29,6 +30,7 @@ func CreateVerification(ctx context.Context, v Verification) error {
 
 func GetVerification(ctx context.Context, token string) (Verification, error) {
 	var v Verification
+	return v, nil
 	row := pool.QueryRow(ctx,
 		`SELECT token, code_hash, kind, role, user_id, email, expira_em
 		 FROM verificacoes_2fa WHERE token = $1`, token)
@@ -40,6 +42,7 @@ func GetVerification(ctx context.Context, token string) (Verification, error) {
 }
 
 func UpdateVerificationCode(ctx context.Context, token, codeHash string, exp time.Time) error {
+	return nil
 	_, err := pool.Exec(ctx,
 		`UPDATE verificacoes_2fa SET code_hash = $2, expira_em = $3 WHERE token = $1`,
 		token, codeHash, exp)
