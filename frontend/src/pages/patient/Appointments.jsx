@@ -1,19 +1,43 @@
+import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useApp } from '../../context/AppContext';
+// import { useApp } from '../../context/AppContext'; // Removido para usar chamadas reais
 import { Icon } from '../../lib/icons';
 import { Avatar, StatusBadge } from '../../components/Shared';
-import { fmtDateFull } from '../../lib/utils';
-import { appointmentAccessInfo } from '../../lib/mock';
+import { fmtDateFull, extractTime, appointmentAccessInfoNova } from '../../lib/utils';
+import { api } from '../../services/apiMock';
 
 export default function Appointments() {
   const navigate = useNavigate();
-  const { appointments, apptTab, setApptTab, doctorById, specialtyById } = useApp();
 
+  const [appointments, setAppointments] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  const [apptTab, setApptTab] = useState('proximas');
+
+  const loggedUserId = 'p1';
+
+  useEffect(() => {
+    async function fetchConsultas() {
+      setLoading(true);
+      try {
+        const data = await api.getConsultasPaciente(loggedUserId);
+        setAppointments(data);
+      } catch (error) {
+        console.error("Erro ao carregar consultas:", error);
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    fetchConsultas();
+  }, [loggedUserId]);
+
+  // Lógica de separação por status
   const upcoming = appointments.filter((a) =>
-    ['agendada', 'confirmada', 'em_andamento'].includes(a.status),
+    ['agendada', 'confirmada', 'em_andamento'].includes(a.status)
   );
   const past = appointments.filter((a) =>
-    ['concluida', 'cancelada'].includes(a.status),
+    ['concluida', 'cancelada'].includes(a.status)
   );
   const list = apptTab === 'proximas' ? upcoming : past;
 
@@ -40,9 +64,15 @@ export default function Appointments() {
       </div>
 
       <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-        {list.map((a) => {
-          const doc = doctorById(a.doctorId);
-          const { canJoin } = appointmentAccessInfo(a);
+        {loading ? (
+          // Placeholder de loading super simples
+          <div className="card muted small" style={{ textAlign: 'center', padding: 30 }}>
+            Carregando consultas...
+          </div>
+        ) : list.map((a) => {
+          // Os dados do médico agora vêm aninhados (padrão de API REST bem feita)
+          const doc = a.medicoDetalhes;
+          const { canJoin } = appointmentAccessInfoNova(a);
 
           return (
             <div
@@ -51,12 +81,13 @@ export default function Appointments() {
               style={{ flexWrap: 'wrap', gap: 14 }}
             >
               <div className="flex-center">
-                <Avatar name={doc.name} size={44} />
+                <Avatar name={doc.nome} size={44} />
                 <div>
-                  <div style={{ fontWeight: 500 }}>{doc.name}</div>
+                  <div style={{ fontWeight: 500 }}>{doc.nome}</div>
                   <div className="small muted">
-                    {specialtyById(doc.specialty).name} · {fmtDateFull(a.date)} ·{' '}
-                    {a.time}
+                    {/* A especialidade já é string na nova entidade */}
+                    {doc.especialidade} · {fmtDateFull(a.hora)} ·{' '}
+                    {extractTime(a.hora)}
                   </div>
                 </div>
               </div>
@@ -65,7 +96,7 @@ export default function Appointments() {
                 {canJoin && (
                   <button
                     className="btn btn-primary btn-sm"
-                    onClick={() => navigate('/patient/preroom')}
+                    onClick={() => navigate(`/patient/preroom/${a.id}`)}
                   >
                     <Icon name="video" /> Entrar
                   </button>
@@ -81,12 +112,12 @@ export default function Appointments() {
           );
         })}
 
-        {!list.length && (
+        {!loading && list.length === 0 && (
           <div
             className="card muted small"
             style={{ textAlign: 'center', padding: 30 }}
           >
-            Nenhuma consulta aqui ainda.
+            Nenhuma consulta encontrada.
           </div>
         )}
       </div>
