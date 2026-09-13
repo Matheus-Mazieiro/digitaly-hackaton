@@ -14,7 +14,7 @@ type Doctor struct {
 	AvaliacaoSoma int       `json:"avaliacao_soma"`
 	NConsultas    int       `json:"n_consultas"`
 	Especialidade string    `json:"especialidade"`
-	Senha         string    `json:"senha"`
+	Senha         string    `json:"-"`
 	Ativo         bool      `json:"ativo"`
 }
 
