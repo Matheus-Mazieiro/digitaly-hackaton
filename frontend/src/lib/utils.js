@@ -44,3 +44,27 @@ export function fmtDateShortTime(dateStr, time) {
   const month = String(d.getMonth() + 1).padStart(2, '0');
   return `${day}/${month} · ${time}`;
 }
+
+export function appointmentAccessInfoNova(consulta) {
+  if (!consulta) return { canJoin: false, reason: 'not_found' };
+
+  if (consulta.status === 'em_andamento') return { canJoin: true, reason: 'live' };
+  if (consulta.status === 'concluida') return { canJoin: false, reason: 'finished' };
+  if (consulta.status === 'cancelada') return { canJoin: false, reason: 'cancelled' };
+
+  const dataConsulta = new Date(consulta.hora);
+  const msUntil = dataConsulta.getTime() - new Date().getTime();
+  const JOIN_WINDOW_MS = 15 * 60 * 1000; // 15 minutos
+  const ONE_HOUR = 60 * 60 * 1000;
+
+  if (msUntil <= JOIN_WINDOW_MS && msUntil > -ONE_HOUR) {
+    return { canJoin: true, reason: 'window', msUntil };
+  }
+
+  return { canJoin: false, reason: 'too_early' };
+}
+
+// Extrai a hora de uma data (Ex: "14:30")
+export function extractTime(dateString) {
+  return new Date(dateString).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+}
