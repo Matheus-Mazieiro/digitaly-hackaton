@@ -1,32 +1,67 @@
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useApp } from '../../context/AppContext';
 import { Icon } from '../../lib/icons';
-import { Avatar } from '../../components/Shared';
+import { Avatar, BackButton } from '../../components/Shared';
 import { fmtDateFull } from '../../lib/utils';
-import {
-  appointmentAccessInfo,
-  humanizeTimeUntil,
-  fmtHM,
-} from '../../lib/mock';
+import { appointmentAccessInfo, humanizeTimeUntil, fmtHM } from '../../lib/mock';
+import { acquireStream, releaseStream, peekStream } from '../../lib/media';
 
 export default function Preroom() {
   const navigate = useNavigate();
   const { nextPatientAppt, doctorById, specialtyById, patientName } = useApp();
-  const [mic, setMic] = useState(true);
-  const [cam, setCam] = useState(true);
+
+  const videoRef = useRef(null);
+  const enteredCallRef = useRef(false);
+  const [micOn, setMicOn] = useState(true);
+  const [camOn, setCamOn] = useState(true);
+  const [mediaReady, setMediaReady] = useState(false);
+  const [mediaError, setMediaError] = useState(null);
 
   const a = nextPatientAppt();
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const stream = await acquireStream();
+        if (cancelled) return;
+        if (videoRef.current) videoRef.current.srcObject = stream;
+
+        const at = stream.getAudioTracks()[0];
+        const vt = stream.getVideoTracks()[0];
+        if (at) setMicOn(at.enabled);
+        if (vt) setCamOn(vt.enabled);
+
+        setMediaReady(true);
+      } catch (err) {
+        if (!cancelled) setMediaError(err);
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+      if (!enteredCallRef.current) {
+        releaseStream();
+      }
+    };
+  }, []);
+
   if (!a) {
     return (
       <div
         className="card"
-        style={{ textAlign: 'center', padding: 40, maxWidth: 480, margin: '40px auto 0' }}
+        style={{
+          textAlign: 'center',
+          padding: 40,
+          maxWidth: 480,
+          margin: '40px auto 0',
+        }}
       >
-        <div style={{ color: 'var(--g500)', marginBottom: 10 }}>
+        <div style={{ color: 'var(--texto-3)', marginBottom: 10 }}>
           <Icon name="calendar" size={28} />
         </div>
-        <div style={{ fontWeight: 600, marginBottom: 6 }}>
+        <div style={{ fontWeight: 500, marginBottom: 6 }}>
           Nenhuma consulta para entrar
         </div>
         <div className="small muted" style={{ marginBottom: 18 }}>
@@ -68,57 +103,119 @@ export default function Preroom() {
       </span>
     );
   } else {
-    statusBadge = (
-      <span className="badge badge-neutral">Sala indisponível</span>
-    );
+    statusBadge = <span className="badge badge-neutral">Sala indisponível</span>;
   }
 
+  const toggleMic = () => {
+    const s = peekStream();
+    const t = s?.getAudioTracks()[0];
+    if (!t) return;
+    t.enabled = !t.enabled;
+    setMicOn(t.enabled);
+  };
+
+  const toggleCam = () => {
+    const s = peekStream();
+    const t = s?.getVideoTracks()[0];
+    if (!t) return;
+    t.enabled = !t.enabled;
+    setCamOn(t.enabled);
+  };
+
+  const enterCall = () => {
+    enteredCallRef.current = true;
+    navigate(`/patient/call?room=${a.id}`);
+  };
+
   return (
-    <div style={{ maxWidth: 520, margin: '10px auto 0', textAlign: 'center' }}>
+    <div style={{ maxWidth: 560, margin: '10px auto 0', textAlign: 'center' }}>
+      <div style={{ display: 'flex', justifyContent: 'flex-start' }}>
+        <BackButton onClick={() => navigate('/patient/dashboard')} />
+      </div>
+
       <h1 className="page-title" style={{ fontSize: 22 }}>
         Prepare-se para sua consulta
       </h1>
       <div className="page-sub">
         {canEnter
-          ? 'Sua sala já está disponível. Quando estiver pronto, entre para iniciar seu atendimento.'
+          ? 'Sua sala já está disponível. Revise câmera e microfone e entre quando quiser.'
           : 'Você poderá entrar assim que a sala for liberada — abre 15 minutos antes do horário.'}
       </div>
 
       <div className="card card-hero" style={{ padding: 0, overflow: 'hidden' }}>
         <div
           style={{
-            height: 220,
-            background: 'linear-gradient(160deg,#141821,#0B0D10)',
+            height: 300,
+            background: '#0B0D10',
+            position: 'relative',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            position: 'relative',
           }}
         >
-          <div className="avatar big-avatar">
-            {patientName
-              .split(' ')
-              .map((w) => w[0])
-              .slice(0, 2)
-              .join('')}
-          </div>
+          <video
+            ref={videoRef}
+            autoPlay
+            playsInline
+            muted
+            className="local-video"
+            style={{ display: camOn && mediaReady ? 'block' : 'none' }}
+          />
+
+          {(!mediaReady || !camOn) && (
+            <div
+              className="video-thumb-off"
+              style={{ position: 'absolute', inset: 0 }}
+            >
+              {mediaError ? (
+                <div className="call-error" style={{ maxWidth: 380 }}>
+                  <Icon name="alert" size={16} />
+                  <span>
+                    {mediaError.name === 'NotAllowedError'
+                      ? 'Permissão de câmera/microfone negada. Habilite no navegador e recarregue.'
+                      : mediaError.message}
+                  </span>
+                </div>
+              ) : (
+                <Avatar name={patientName} size={96} fontSize={32} />
+              )}
+            </div>
+          )}
+
+          {!mediaReady && !mediaError && (
+            <div
+              className="glass"
+              style={{
+                position: 'absolute',
+                bottom: 16,
+                left: '50%',
+                transform: 'translateX(-50%)',
+                padding: '8px 16px',
+                borderRadius: 999,
+                fontSize: 12.5,
+                color: 'var(--texto-2)',
+              }}
+            >
+              Solicitando acesso à câmera e microfone...
+            </div>
+          )}
 
           {!canEnter && access.reason === 'too_early' && (
             <div
               className="glass"
               style={{
                 position: 'absolute',
-                bottom: 16,
-                left: 16,
-                right: 16,
-                padding: '10px 14px',
+                top: 16,
+                left: '50%',
+                transform: 'translateX(-50%)',
+                padding: '8px 16px',
                 borderRadius: 999,
-                fontSize: 13,
+                fontSize: 12.5,
               }}
             >
               <Icon
                 name="clock"
-                size={14}
+                size={13}
                 style={{ verticalAlign: -2, marginRight: 6 }}
               />
               Falta {humanizeTimeUntil(access.msUntil)} para a consulta
@@ -129,9 +226,9 @@ export default function Preroom() {
         <div style={{ padding: 18 }}>
           <div className="row-between" style={{ flexWrap: 'wrap', gap: 10 }}>
             <div style={{ textAlign: 'left' }}>
-              <div style={{ fontWeight: 600 }}>{doc.name}</div>
+              <div style={{ fontWeight: 500 }}>{doc.name}</div>
               <div className="small muted">
-                {spec.name} · {fmtDateFull(a.date)} · {a.time}
+                {spec.name} · {fmtDateFull(a.date)} · {a.time} · Sala #{a.id}
               </div>
             </div>
             {statusBadge}
@@ -141,16 +238,20 @@ export default function Preroom() {
 
           <div style={{ display: 'flex', justifyContent: 'center', gap: 12 }}>
             <button
-              className={`ctrl-btn ${mic ? 'active' : ''}`}
-              onClick={() => setMic((v) => !v)}
+              className={`ctrl-btn ${micOn ? '' : 'off'}`}
+              onClick={toggleMic}
+              disabled={!mediaReady}
+              title={micOn ? 'Mutar microfone' : 'Ativar microfone'}
             >
-              <Icon name="mic" />
+              <Icon name={micOn ? 'mic' : 'micOff'} />
             </button>
             <button
-              className={`ctrl-btn ${cam ? 'active' : ''}`}
-              onClick={() => setCam((v) => !v)}
+              className={`ctrl-btn ${camOn ? '' : 'off'}`}
+              onClick={toggleCam}
+              disabled={!mediaReady}
+              title={camOn ? 'Desligar câmera' : 'Ligar câmera'}
             >
-              <Icon name="video" />
+              <Icon name={camOn ? 'video' : 'camOff'} />
             </button>
           </div>
         </div>
@@ -159,16 +260,15 @@ export default function Preroom() {
       <button
         className="btn btn-primary btn-block"
         style={{ marginTop: 20 }}
-        disabled={!canEnter}
-        onClick={() => navigate('/patient/call')}
+        disabled={!canEnter || !mediaReady}
+        onClick={enterCall}
       >
         <Icon name="video" /> Entrar na consulta
       </button>
 
       {!canEnter && access.reason === 'too_early' && (
         <div className="small muted" style={{ marginTop: 10 }}>
-          A sala abre automaticamente às {fmtHM(access.opensAt)} — você não
-          precisa recarregar a página.
+          A sala abre automaticamente às {fmtHM(access.opensAt)}.
         </div>
       )}
     </div>

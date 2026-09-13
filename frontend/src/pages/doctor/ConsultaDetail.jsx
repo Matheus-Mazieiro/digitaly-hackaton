@@ -8,7 +8,13 @@ import { fmtDateFullLong } from '../../lib/utils';
 export default function ConsultaDetail() {
   const navigate = useNavigate();
   const { id } = useParams();
-  const { apptById, patientName, patchAppointment, pushNotification } = useApp();
+  const {
+    apptById,
+    patientName,
+    patchAppointment,
+    pushNotification,
+    setActiveApptId,
+  } = useApp();
   const { toast } = useToast();
 
   const a = apptById(Number(id));
@@ -23,9 +29,15 @@ export default function ConsultaDetail() {
   const allDocs = [...doctorDocs, ...patientDocs];
 
   const startCall = () => {
+    setActiveApptId(a.id);
     patchAppointment(a.id, { status: 'em_andamento' });
     pushNotification('Seu médico entrou na sala.', 'started');
-    navigate('/doctor/call');
+    navigate(`/doctor/call?room=${a.id}`);
+  };
+
+  const continueCall = () => {
+    setActiveApptId(a.id);
+    navigate(`/doctor/call?room=${a.id}`);
   };
 
   const handleDoctorUpload = () => {
@@ -49,7 +61,7 @@ export default function ConsultaDetail() {
         Consulta com {patientName}
       </h1>
       <div className="page-sub">
-        {fmtDateFullLong(a.date)} · {a.time}
+        {fmtDateFullLong(a.date)} · {a.time} · Sala #{a.id}
       </div>
 
       <div
@@ -57,7 +69,8 @@ export default function ConsultaDetail() {
         style={
           isFuture
             ? {
-                background: 'linear-gradient(135deg, rgba(0,159,255,0.08), rgba(38,42,49,0.6))',
+                background:
+                  'linear-gradient(135deg, rgba(0,159,255,0.08), rgba(38,42,49,0.6))',
                 borderColor: 'var(--celeste-600)',
               }
             : undefined
@@ -91,7 +104,7 @@ export default function ConsultaDetail() {
       {isFuture && (
         <div style={{ display: 'flex', gap: 10, marginTop: 20, flexWrap: 'wrap' }}>
           {inProgress ? (
-            <button className="btn btn-primary" onClick={() => navigate('/doctor/call')}>
+            <button className="btn btn-primary" onClick={continueCall}>
               <Icon name="video" /> Continuar teleatendimento
             </button>
           ) : (
@@ -137,8 +150,13 @@ export default function ConsultaDetail() {
       )}
 
       <div style={{ marginTop: 24 }}>
-        <div className="row-between" style={{ marginBottom: 14, flexWrap: 'wrap', gap: 10 }}>
-          <div className="section-title" style={{ margin: 0 }}>Documentos e laudos</div>
+        <div
+          className="row-between"
+          style={{ marginBottom: 14, flexWrap: 'wrap', gap: 10 }}
+        >
+          <div className="section-title" style={{ margin: 0 }}>
+            Documentos e laudos
+          </div>
           <button className="btn btn-secondary btn-sm" onClick={handleDoctorUpload}>
             <Icon name="upload" size={14} /> Adicionar documento
           </button>
@@ -152,25 +170,40 @@ export default function ConsultaDetail() {
                 key={i}
                 className="card row-between"
                 style={{
-                  borderLeft: `4px solid ${fromPatient ? 'var(--warning)' : 'var(--celeste-500)'}`,
-                  background: fromPatient ? 'rgba(245,158,11,0.05)' : 'rgba(0,159,255,0.05)',
-                  flexWrap: 'wrap', gap: 10,
+                  borderLeft: `4px solid ${
+                    fromPatient ? 'var(--warning)' : 'var(--celeste-500)'
+                  }`,
+                  background: fromPatient
+                    ? 'rgba(245,158,11,0.05)'
+                    : 'rgba(0,159,255,0.05)',
+                  flexWrap: 'wrap',
+                  gap: 10,
                 }}
               >
                 <div className="flex-center">
                   <div
                     style={{
-                      width: 36, height: 36, borderRadius: 10,
-                      background: fromPatient ? 'rgba(245,158,11,0.15)' : 'var(--celeste-500)',
+                      width: 36,
+                      height: 36,
+                      borderRadius: 10,
+                      background: fromPatient
+                        ? 'rgba(245,158,11,0.15)'
+                        : 'var(--celeste-500)',
                       color: fromPatient ? '#FBBF24' : '#fff',
-                      display: 'flex', alignItems: 'center', justifyContent: 'center',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
                     }}
                   >
                     <Icon name="file" size={18} />
                   </div>
                   <div>
-                    <div style={{ fontWeight: 500, fontSize: 13.5 }}>{d.name}</div>
-                    <div className="small muted">{d.type} · Enviado por {d.from}</div>
+                    <div style={{ fontWeight: 500, fontSize: 13.5 }}>
+                      {d.name}
+                    </div>
+                    <div className="small muted">
+                      {d.type} · Enviado por {d.from}
+                    </div>
                   </div>
                 </div>
                 <button className="btn btn-secondary btn-sm">
@@ -181,7 +214,10 @@ export default function ConsultaDetail() {
           })}
 
           {!allDocs.length && (
-            <div className="card muted small" style={{ textAlign: 'center', padding: 20 }}>
+            <div
+              className="card muted small"
+              style={{ textAlign: 'center', padding: 20 }}
+            >
               {isFuture
                 ? 'Nenhum documento ainda. O paciente pode enviar exames ou encaminhamentos antes da consulta.'
                 : 'Nenhum documento nesta consulta.'}
