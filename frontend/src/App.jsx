@@ -4,12 +4,11 @@ import { ToastProvider } from './context/ToastContext';
 import ToastHost from './components/ToastHost';
 import { AppShell } from './components/Layout';
 
-// auth
+// auth (Se você dividir os arquivos no futuro, atualize estes imports)
 import {
   Login,
   SignupPatient,
   SignupDoctor,
-  CrmValidating,
   TwoFA,
 } from './pages/auth/AuthScreens';
 
@@ -57,7 +56,6 @@ function AppRoutes() {
       <Route path="/login" element={<Login />} />
       <Route path="/signup/patient" element={<SignupPatient />} />
       <Route path="/signup/doctor" element={<SignupDoctor />} />
-      <Route path="/crm-validating" element={<CrmValidating />} />
       <Route path="/2fa" element={<TwoFA />} />
 
       {/* paciente */}
