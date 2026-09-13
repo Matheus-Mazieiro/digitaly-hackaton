@@ -9,8 +9,6 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 
 
-	"github.com/jackc/pgx/v5/pgxpool"
-
 	"github.com/matheus-mazieiro/digitaly-hackaton/internal/config"
 	"github.com/matheus-mazieiro/digitaly-hackaton/internal/repositories"
 	"github.com/matheus-mazieiro/digitaly-hackaton/internal/routes"
@@ -29,7 +27,7 @@ func main() {
 	pool, err := pgxpool.New(ctx, connString)
 	cfg := config.Load()
 
-	pool, err := pgxpool.New(ctx, cfg.DatabaseURL)
+	pool, err = pgxpool.New(ctx, cfg.DatabaseURL)
 	if err != nil {
 		log.Fatalf("erro ao criar pool de conexões: %v", err)
 	}
@@ -73,11 +71,13 @@ func corsMiddleware(next http.Handler) http.Handler {
 		w.Header().Set("Access-Control-Max-Age", "86400")
 
 		// Preflight do browser
-	mux := http.NewServeMux()
-	routes.Register(mux, cfg)
+	if r.Method == http.MethodOptions {
+			w.WriteHeader(http.StatusNoContent)
+			return
+		}
 
-	log.Printf("Server running on :%s", cfg.Port)
-	log.Fatal(http.ListenAndServe(":"+cfg.Port, cors(mux)))
+		next.ServeHTTP(w, r)
+	})
 }
 
 // cors libera o acesso do front (Vite em outra porta) durante o desenvolvimento.
