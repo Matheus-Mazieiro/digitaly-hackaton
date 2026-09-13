@@ -11,5 +11,6 @@ bin/
 .env.local
 
 # Node (frontend)
-frontend/node_modules/
-frontend/dist/
+/frontend/node_modules/
+/frontend/dist/
+/frontend/node_modules/

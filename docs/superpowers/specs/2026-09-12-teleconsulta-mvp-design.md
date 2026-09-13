@@ -35,7 +35,7 @@ Preroom (janela de 15 min) → chamada WebRTC ao vivo → médico encerra
 - Disponibilidade derivada das `consultas` (sem tabela de disponibilidade).
 - Videoconferência **WebRTC ponto a ponto** com signaling via WebSocket no backend Go.
 - Captura de **áudio** da consulta (no navegador do médico) e upload ao encerrar.
-- Pipeline de IA: `gpt-transcribe` (com diarização) → `gpt-4o-mini` → resumo estruturado.
+- Pipeline de IA: transcrição direto pelo navegador via API → `gpt-4o-mini` → resumo estruturado.
 - **Prontuário.pdf** (gerado do resumo) e **Receita.pdf** (gerada de formulário preenchido pelo médico).
 - Notificações in-app.
 - Avaliação do médico por **estrela** (agrega `avaliacao_soma` / `n_consultas`).

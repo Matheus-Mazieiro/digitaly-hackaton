@@ -42,7 +42,7 @@ Cada task tem: o que fazer, "pronto quando", tempo estimado e dependências.
 | BB1 | Especialidades (lista fixa) + médicos (listagem com `rating`/`reviews` derivados) + slots livres por data (template − consultas) | `GET /specialties`, `GET /doctors?specialty=&date=`, `GET /doctors/:id/slots` | 1.5h | BA1 |
 | BB2 | Consultas: agendar / confirmar (código e-mail) / start / status / detalhe / listagem por usuário | `POST /appointments` + confirm + start + GETs | 1.5h | BA1, BB1 |
 | BB3 | Notificações: criar nos eventos + listar + marcar lida | `GET /notifications` + `PATCH .../read` | 0.75h | BA1 |
-| BB4 | Integração OpenAI: `gpt-transcribe` (diarização) + `gpt-4o-mini` (resumo JSON) | `/audio` devolve `{resumo}` real | 1.5h | BB2 |
+| BB4 | Integração OpenAI: transcrição via API do Chrome + `gpt-4o-mini` (resumo JSON) | `/audio` devolve `{resumo}` real | 1.5h | BB2 |
 | BB5 | Geração de PDF: `prontuário.pdf` (do resumo) e `receita.pdf` (do formulário) | endpoints de download retornam PDF | 1.25h | BB4 (prontuário), BB2 |
 | BB6 | WebSocket signaling: sala por `appointmentId`, relay de offer/answer/ice, JWT no handshake | dois peers trocam SDP/ICE via WS | 1h | BA2 |
 | BB7 | Avaliação: `POST /review` atualiza `avaliacao_soma`/`n_consultas` | rating do médico muda | 0.25h | BB2 |

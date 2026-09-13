@@ -52,7 +52,7 @@ func main() {
 
 	// --- Rotas ---
 	mux := http.NewServeMux()
-	routes.Register(mux)
+	routes.Register(mux, cfg)
 
 	// --- Servidor com CORS ---
 	handler := corsMiddleware(mux)
