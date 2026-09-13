@@ -53,8 +53,11 @@ function Sidebar({ nav, role, userName }) {
           <div style={{ overflow: 'hidden' }}>
             <div
               style={{
-                fontSize: 13, fontWeight: 500, whiteSpace: 'nowrap',
-                overflow: 'hidden', textOverflow: 'ellipsis',
+                fontSize: 13,
+                fontWeight: 500,
+                whiteSpace: 'nowrap',
+                overflow: 'hidden',
+                textOverflow: 'ellipsis',
               }}
             >
               {userName}
@@ -104,34 +107,6 @@ function BottomNav({ nav }) {
   );
 }
 
-function DemoBar() {
-  const { role, setRole } = useApp();
-  const navigate = useNavigate();
-  const switchRole = (r) => {
-    setRole(r);
-    navigate(r === 'patient' ? '/patient/dashboard' : '/doctor/dashboard');
-  };
-  return (
-    <div className="demo-bar glass">
-      <span className="lbl">Modo demonstração</span>
-      <div className="demo-switch">
-        <button
-          className={role === 'patient' ? 'active' : ''}
-          onClick={() => switchRole('patient')}
-        >
-          <Icon name="user" size={14} /> Paciente
-        </button>
-        <button
-          className={role === 'doctor' ? 'active' : ''}
-          onClick={() => switchRole('doctor')}
-        >
-          <Icon name="activity" size={14} /> Médico
-        </button>
-      </div>
-    </div>
-  );
-}
-
 const TITLES = {
   dashboard: 'Início',
   appointments: 'Minhas consultas',
@@ -176,7 +151,6 @@ export function AppShell() {
         </div>
       </div>
       <BottomNav nav={nav} />
-      <DemoBar />
     </div>
   );
 }
