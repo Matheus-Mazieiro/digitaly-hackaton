@@ -30,14 +30,12 @@ export function useCall({ roomId, role }) {
   const [micOn, setMicOn] = useState(true);
   const [camOn, setCamOn] = useState(true);
 
-  // debug exposto pra tela
+  // streams expostos para gravação e transcrição
+  const [localStream, setLocalStream] = useState(null);
+  const [remoteStream, setRemoteStream] = useState(null);
+
   const [debug, setDebug] = useState({
-    signaling: 'idle',
-    ice: 'new',
-    connection: 'new',
-    sent: 0,
-    received: 0,
-    queued: 0,
+    signaling: 'idle', ice: 'new', connection: 'new', sent: 0, received: 0, queued: 0,
   });
 
   useEffect(() => {
@@ -53,14 +51,12 @@ export function useCall({ roomId, role }) {
       try {
         stream = await acquireStream();
       } catch (err) {
-        if (!cancelled) {
-          setError(err);
-          setStatus('failed');
-        }
+        if (!cancelled) { setError(err); setStatus('failed'); }
         return;
       }
-
       if (cancelled) return;
+
+      setLocalStream(stream);
 
       if (localVideoRef.current) localVideoRef.current.srcObject = stream;
       const at = stream.getAudioTracks()[0];
@@ -79,19 +75,10 @@ export function useCall({ roomId, role }) {
 
       stream.getTracks().forEach((track) => pc.addTrack(track, stream));
 
-      const remoteStream = new MediaStream();
-      remoteStreamRef.current = remoteStream;
-      if (remoteVideoRef.current) remoteVideoRef.current.srcObject = remoteStream;
+      const rStream = new MediaStream();
+      remoteStreamRef.current = rStream;
+      if (remoteVideoRef.current) remoteVideoRef.current.srcObject = rStream;
 
-      // ===== CORREÇÃO: autoplay do vídeo remoto =====
-      // <video> remoto tem áudio, então autoplay depende de o navegador
-      // já ter registrado interação do usuário nessa aba/origem. Se a
-      // aba foi aberta direto por URL (sem clique dentro do app), o
-      // play() com som é bloqueado silenciosamente e o vídeo fica
-      // congelado mesmo com a conexão 100% funcional. Por isso:
-      // 1) tenta tocar com som;
-      // 2) se falhar, toca mudo (sempre permitido) e sinaliza pra UI
-      //    mostrar um botão "ativar som" — um clique nele destrava.
       async function playRemote() {
         const el = remoteVideoRef.current;
         if (!el) return;
@@ -99,30 +86,23 @@ export function useCall({ roomId, role }) {
           el.muted = false;
           await el.play();
           setRemoteAudioBlocked(false);
-        } catch (err) {
-          console.warn('[call] autoplay com som bloqueado, tocando mudo', err);
-          try {
-            el.muted = true;
-            await el.play();
-          } catch (err2) {
-            console.warn('[call] play() falhou mesmo mudo', err2);
-          }
+        } catch {
+          try { el.muted = true; await el.play(); } catch {}
           setRemoteAudioBlocked(true);
         }
       }
 
       pc.ontrack = (ev) => {
-        const incoming = ev.streams?.length
-          ? ev.streams
-          : [new MediaStream([ev.track])];
+        const incoming = ev.streams?.length ? ev.streams : [new MediaStream([ev.track])];
         incoming.forEach((s) => {
           s.getTracks().forEach((track) => {
-            if (!remoteStream.getTracks().find((t) => t.id === track.id)) {
-              remoteStream.addTrack(track);
+            if (!rStream.getTracks().find((t) => t.id === track.id)) {
+              rStream.addTrack(track);
             }
           });
         });
         setRemoteActive(true);
+        setRemoteStream(rStream); // expõe pra useRecorder
         playRemote();
       };
 
@@ -130,11 +110,7 @@ export function useCall({ roomId, role }) {
         setDebug((d) => ({ ...d, connection: pc.connectionState }));
         if (pc.connectionState === 'connected') setStatus('connected');
         else if (pc.connectionState === 'failed') setStatus('failed');
-        else if (
-          pc.connectionState === 'disconnected' ||
-          pc.connectionState === 'closed'
-        )
-          setStatus('ended');
+        else if (pc.connectionState === 'disconnected' || pc.connectionState === 'closed') setStatus('ended');
       };
 
       pc.oniceconnectionstatechange = () => {
@@ -144,12 +120,6 @@ export function useCall({ roomId, role }) {
       const signaling = createSignaling({ room: roomId, role });
       signalingRef.current = signaling;
 
-      // ===== CORREÇÃO =====
-      // RTCIceCandidate/RTCSessionDescription são instâncias nativas do
-      // navegador — o structured clone do BroadcastChannel (usado no
-      // postMessage) não sabe cloná-las e lança DataCloneError, o que
-      // derrubava o envio de forma silenciosa. Por isso serializamos pra
-      // objeto simples (candidate.toJSON()) antes de mandar.
       pc.onicecandidate = ({ candidate }) => {
         if (!candidate) return;
         signaling.send({ type: 'candidate', candidate: candidate.toJSON() });
@@ -161,87 +131,57 @@ export function useCall({ roomId, role }) {
         pendingRemoteCandidatesRef.current = [];
         setDebug((d) => ({ ...d, queued: 0 }));
         for (const c of list) {
-          try {
-            await pc.addIceCandidate(c);
-          } catch (err) {
-            console.warn('[call] erro ao adicionar candidate da fila', err);
-          }
+          try { await pc.addIceCandidate(c); } catch (err) { console.warn('[call] addIceCandidate', err); }
         }
       }
 
       signaling.onMessage(async (msg) => {
         setDebug((d) => ({ ...d, received: d.received + 1 }));
-        console.log('[call] <<', msg.type);
         try {
           if (msg.type === 'peer-joined') {
             setPeerPresent(true);
-            if (
-              isInitiator &&
-              !negotiatedRef.current &&
-              pc.signalingState === 'stable'
-            ) {
+            if (isInitiator && !negotiatedRef.current && pc.signalingState === 'stable') {
               negotiatedRef.current = true;
               const offer = await pc.createOffer();
               await pc.setLocalDescription(offer);
               signaling.send({
                 type: 'description',
-                description: {
-                  type: pc.localDescription.type,
-                  sdp: pc.localDescription.sdp,
-                },
+                description: { type: pc.localDescription.type, sdp: pc.localDescription.sdp },
               });
-              console.log('[call] >> offer');
             }
           } else if (msg.type === 'peer-left') {
-            setPeerPresent(false);
-            setRemoteActive(false);
-            setStatus('ended');
+            setPeerPresent(false); setRemoteActive(false); setStatus('ended');
           } else if (msg.type === 'description') {
             if (msg.description.type === 'offer') {
-              if (negotiatedRef.current && pc.signalingState === 'stable') {
-                console.warn('[call] offer ignorada (já negociado)');
-                return;
-              }
+              if (negotiatedRef.current && pc.signalingState === 'stable') return;
               await pc.setRemoteDescription(msg.description);
               remoteDescSetRef.current = true;
               await flushRemoteCandidates();
-
               const answer = await pc.createAnswer();
               await pc.setLocalDescription(answer);
               signaling.send({
                 type: 'description',
-                description: {
-                  type: pc.localDescription.type,
-                  sdp: pc.localDescription.sdp,
-                },
+                description: { type: pc.localDescription.type, sdp: pc.localDescription.sdp },
               });
-              console.log('[call] >> answer');
             } else if (msg.description.type === 'answer') {
               await pc.setRemoteDescription(msg.description);
               remoteDescSetRef.current = true;
               await flushRemoteCandidates();
-              console.log('[call] remote description = answer');
             }
           } else if (msg.type === 'candidate' && msg.candidate) {
             if (!remoteDescSetRef.current) {
               pendingRemoteCandidatesRef.current.push(msg.candidate);
               setDebug((d) => ({ ...d, queued: d.queued + 1 }));
-              console.log('[call] candidate empilhada (aguardando remote desc)');
             } else {
-              try {
-                await pc.addIceCandidate(msg.candidate);
-              } catch (err) {
-                console.warn('[call] erro addIceCandidate', err);
-              }
+              try { await pc.addIceCandidate(msg.candidate); } catch (err) { console.warn('[call] addIceCandidate', err); }
             }
           }
         } catch (err) {
-          console.error('[call] erro na sinalização', err);
+          console.error('[call] signaling error', err);
         }
       });
 
       await signaling.connect();
-      console.log('[call] signaling conectado');
     }
 
     init();
@@ -291,24 +231,15 @@ export function useCall({ roomId, role }) {
       await el.play();
       setRemoteAudioBlocked(false);
     } catch (err) {
-      console.warn('[call] ainda não foi possível ativar o som', err);
+      console.warn('[call] unlock falhou', err);
     }
   };
 
   return {
-    localVideoRef,
-    remoteVideoRef,
-    status,
-    error,
-    peerPresent,
-    remoteActive,
-    remoteAudioBlocked,
-    unlockRemoteAudio,
-    micOn,
-    camOn,
-    toggleMic,
-    toggleCam,
-    end,
+    localVideoRef, remoteVideoRef,
+    status, error, peerPresent, remoteActive, remoteAudioBlocked, unlockRemoteAudio,
+    micOn, camOn, toggleMic, toggleCam, end,
     debug,
+    localStream, remoteStream, // <-- NOVO
   };
 }
