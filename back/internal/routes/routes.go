@@ -13,4 +13,11 @@ func Register(mux *http.ServeMux) {
 	mux.HandleFunc("/doctors", handlers.GetDoctors)
 	mux.HandleFunc("/appointments", handlers.GetAppointments)
 	mux.HandleFunc("/notifications", handlers.GetNotifications)
+	mux.HandleFunc("/api/realtime/session", handlers.RealtimeSession)
+	mux.HandleFunc("/api/ai/insights", handlers.AIInsights)
+	mux.HandleFunc("/api/ai/summary", handlers.AISummary)
+	mux.HandleFunc("/api/recordings", handlers.UploadRecording)
 }
+
+
+

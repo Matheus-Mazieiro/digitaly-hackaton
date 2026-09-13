@@ -59,13 +59,13 @@ fi
 # 3. Migrations + seed
 sudo -u postgres "$PSQL" \
   -d "$DB_NAME" \
-  -f "$MIGRATIONS_DIR/001_schema.sql" >/dev/null
+  < "$MIGRATIONS_DIR/001_schema.sql"
 
 echo ">> Schema aplicado (001_schema.sql)"
 
 sudo -u postgres "$PSQL" \
   -d "$DB_NAME" \
-  -f "$MIGRATIONS_DIR/002_seed.sql" >/dev/null
+  < "$MIGRATIONS_DIR/002_seed.sql"
 
 echo ">> Seed aplicado (002_seed.sql)"
 
