@@ -5,6 +5,7 @@ import (
 	"errors"
 	"net/http"
 
+	"github.com/matheus-mazieiro/digitaly-hackaton/internal/repositories"
 	"github.com/matheus-mazieiro/digitaly-hackaton/internal/services"
 )
 
@@ -87,6 +88,8 @@ func writeErr(w http.ResponseWriter, err error) {
 		status = http.StatusUnauthorized
 	case errors.Is(err, services.ErrConflict):
 		status = http.StatusConflict
+	case errors.Is(err, repositories.ErrNotFound):
+		status = http.StatusNotFound
 	}
 	http.Error(w, err.Error(), status)
 }

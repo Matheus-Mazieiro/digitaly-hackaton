@@ -7,6 +7,7 @@ import (
 	"os"
 
 	"github.com/jackc/pgx/v5/pgxpool"
+
 	"github.com/matheus-mazieiro/digitaly-hackaton/internal/config"
 	"github.com/matheus-mazieiro/digitaly-hackaton/internal/repositories"
 	"github.com/matheus-mazieiro/digitaly-hackaton/internal/routes"
@@ -15,17 +16,9 @@ import (
 
 func main() {
 	ctx := context.Background()
-
-	// --- Banco de dados ---
-	connString := os.Getenv("DATABASE_URL")
-	if connString == "" {
-		connString = "postgres://digitaly:digitaly@localhost:5432/digitaly"
-	}
-
-	pool, err := pgxpool.New(ctx, connString)
 	cfg := config.Load()
 
-	pool, err = pgxpool.New(ctx, cfg.DatabaseURL)
+	pool, err := pgxpool.New(ctx, cfg.DatabaseURL)
 	if err != nil {
 		log.Fatalf("erro ao criar pool de conexões: %v", err)
 	}
@@ -37,22 +30,18 @@ func main() {
 	repositories.Init(pool)
 	services.InitAuth(cfg)
 
-	// --- Aviso se a chave OpenAI não estiver configurada ---
 	if os.Getenv("API_TOKEN") == "" {
 		log.Println("AVISO: API_TOKEN não está definido — endpoints de IA vão falhar")
 	}
 
-	// --- Porta ---
 	port := os.Getenv("PORT")
 	if port == "" {
 		port = "8085"
 	}
 
-	// --- Rotas ---
 	mux := http.NewServeMux()
 	routes.Register(mux, cfg)
 
-	// --- Servidor com CORS ---
 	handler := corsMiddleware(mux)
 
 	log.Printf("Server running on :%s", port)
@@ -60,29 +49,12 @@ func main() {
 }
 
 // corsMiddleware libera o frontend (Vite em :5173) de chamar o backend.
-// Em produção, troque "*" pelo domínio real.
 func corsMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Access-Control-Allow-Origin", "*")
 		w.Header().Set("Access-Control-Allow-Methods", "GET, POST, PUT, PATCH, DELETE, OPTIONS")
 		w.Header().Set("Access-Control-Allow-Headers", "Content-Type, Authorization, X-Requested-With")
 		w.Header().Set("Access-Control-Max-Age", "86400")
-
-		// Preflight do browser
-		if r.Method == http.MethodOptions {
-			w.WriteHeader(http.StatusNoContent)
-			return
-		}
-		next.ServeHTTP(w, r)
-	})
-}
-
-// cors libera o acesso do front (Vite em outra porta) durante o desenvolvimento.
-func cors(next http.Handler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("Access-Control-Allow-Origin", "*")
-		w.Header().Set("Access-Control-Allow-Methods", "GET, POST, PATCH, PUT, DELETE, OPTIONS")
-		w.Header().Set("Access-Control-Allow-Headers", "Content-Type, Authorization")
 		if r.Method == http.MethodOptions {
 			w.WriteHeader(http.StatusNoContent)
 			return

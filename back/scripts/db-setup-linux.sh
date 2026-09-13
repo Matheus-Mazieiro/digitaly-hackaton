@@ -69,6 +69,18 @@ sudo -u postgres "$PSQL" \
 
 echo ">> Seed aplicado (002_seed.sql)"
 
+sudo -u postgres "$PSQL" \
+  -d "$DB_NAME" \
+  < "$MIGRATIONS_DIR/003_verificacoes.sql"
+
+echo ">> Migração aplicada (003_verificacoes.sql)"
+
+sudo -u postgres "$PSQL" \
+  -d "$DB_NAME" \
+  < "$MIGRATIONS_DIR/004_verificacoes_ref.sql"
+
+echo ">> Migração aplicada (004_verificacoes_ref.sql)"
+
 echo
 echo "OK! Banco '$DB_NAME' pronto."
 echo "Connection string:"
